@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import { ChevronLeft } from 'lucide-react';
@@ -23,6 +23,8 @@ function MapPinPicker({ onSelect }) {
   return marker ? <Marker position={marker} /> : null;
 }
 
+const CUSTOM = '__custom__';
+
 export default function CreateGame() {
   const navigate = useNavigate();
   const [form, setForm] = useState({
@@ -37,9 +39,16 @@ export default function CreateGame() {
     max_players: 4,
     notes: '',
   });
+  const [curatedLocations, setCuratedLocations] = useState([]);
+  const [selectedLocationId, setSelectedLocationId] = useState('');
+  const [customLocationName, setCustomLocationName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [mapCenter] = useState([32.0853, 34.7818]);
+
+  useEffect(() => {
+    api.get('/locations').then(res => setCuratedLocations(res.data.locations)).catch(() => {});
+  }, []);
 
   const set = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
 
@@ -48,9 +57,29 @@ export default function CreateGame() {
     set('max_players', MAX_PLAYERS_DEFAULT[fmt] || 8);
   };
 
+  const handleLocationSelect = (id) => {
+    setSelectedLocationId(id);
+    if (id === CUSTOM) {
+      set('location_name', customLocationName);
+      set('lat', null);
+      set('lng', null);
+    } else {
+      const loc = curatedLocations.find(l => l.id === id);
+      if (loc) {
+        set('location_name', loc.name);
+        set('lat', parseFloat(loc.lat));
+        set('lng', parseFloat(loc.lng));
+      }
+    }
+  };
+
   const handleSportChange = (sport) => {
     set('sport', sport);
-    set('skill_level', ''); // reset when sport changes
+    set('skill_level', '');
+    if (sport === 'Footvolley' && !form.format) {
+      set('format', '2v2');
+      set('max_players', MAX_PLAYERS_DEFAULT['2v2']);
+    }
   };
 
   const skillOptions = form.sport
@@ -63,8 +92,15 @@ export default function CreateGame() {
     if (!form.format) { setError('Select a format'); return; }
     if (!form.skill_level) { setError('Select skill level'); return; }
     if (!form.game_date) { setError('Set date and time'); return; }
-    if (!form.location_name) { setError('Enter a location name'); return; }
-    if (!form.lat || !form.lng) { setError('Tap the map to drop a pin on your location'); return; }
+    if (!form.location_name) { setError('Select or enter a location'); return; }
+    if (!form.lat || !form.lng) {
+      if (selectedLocationId === CUSTOM) {
+        setError('Tap the map to drop a pin on your custom location');
+      } else {
+        setError('Select a location');
+      }
+      return;
+    }
 
     setError('');
     setLoading(true);
@@ -185,31 +221,43 @@ export default function CreateGame() {
           />
         </div>
 
-        {/* Location name */}
+        {/* Location */}
         <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-2">Location name</label>
-          <input
-            type="text"
-            value={form.location_name}
-            onChange={e => set('location_name', e.target.value)}
-            placeholder="e.g. Gordon Beach Court 3"
-            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-400"
-          />
-        </div>
+          <label className="block text-sm font-semibold text-slate-700 mb-2">Location</label>
+          <select
+            value={selectedLocationId}
+            onChange={e => handleLocationSelect(e.target.value)}
+            className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-brand-400"
+          >
+            <option value="">Select a beach…</option>
+            {curatedLocations.map(loc => (
+              <option key={loc.id} value={loc.id}>{loc.name}</option>
+            ))}
+            <option value={CUSTOM}>Other / Custom location</option>
+          </select>
 
-        {/* Map pin drop */}
-        <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-2">
-            Pin location
-            {form.lat && <span className="ml-2 text-xs text-green-600 font-normal">✓ Pin set</span>}
-          </label>
-          <p className="text-xs text-slate-500 mb-2">Tap the map to mark your exact location</p>
-          <div className="h-48 rounded-2xl overflow-hidden border border-slate-200">
-            <MapContainer center={mapCenter} zoom={13} style={{ height: '100%', width: '100%' }} zoomControl={false}>
-              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-              <MapPinPicker onSelect={(lat, lng) => { set('lat', lat); set('lng', lng); }} />
-            </MapContainer>
-          </div>
+          {selectedLocationId === CUSTOM && (
+            <div className="mt-2 space-y-2">
+              <input
+                type="text"
+                value={customLocationName}
+                onChange={e => {
+                  setCustomLocationName(e.target.value);
+                  set('location_name', e.target.value);
+                }}
+                placeholder="e.g. Gordon Beach Court 3"
+                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-400"
+              />
+              <p className="text-xs text-slate-500">Tap the map to drop a pin on your location</p>
+              <div className="h-48 rounded-2xl overflow-hidden border border-slate-200">
+                <MapContainer center={mapCenter} zoom={13} style={{ height: '100%', width: '100%' }} zoomControl={false}>
+                  <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                  <MapPinPicker onSelect={(lat, lng) => { set('lat', lat); set('lng', lng); }} />
+                </MapContainer>
+              </div>
+              {form.lat && <p className="text-xs text-green-600">✓ Pin set</p>}
+            </div>
+          )}
         </div>
 
         {/* Notes */}

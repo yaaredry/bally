@@ -14,6 +14,8 @@ CREATE TABLE IF NOT EXISTS users (
   avatar_seed   VARCHAR(100) DEFAULT 'beach-ace',
   games_hosted  INT DEFAULT 0,
   games_played  INT DEFAULT 0,
+  is_active     BOOLEAN DEFAULT TRUE,
+  is_admin      BOOLEAN DEFAULT FALSE,
   created_at    TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -62,3 +64,27 @@ CREATE TABLE IF NOT EXISTS chat_messages (
 );
 
 CREATE INDEX IF NOT EXISTS idx_chat_game ON chat_messages(game_id, created_at);
+
+-- Curated locations (admin-managed; users pick from dropdown or enter custom)
+CREATE TABLE IF NOT EXISTS locations (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name       VARCHAR(255) UNIQUE NOT NULL,
+  lat        DECIMAL(9,6) NOT NULL,
+  lng        DECIMAL(9,6) NOT NULL,
+  is_active  BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Player ratings (after game completion, 7-day window)
+CREATE TABLE IF NOT EXISTS ratings (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  game_id    UUID NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+  rater_id   UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  rated_id   UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  stars      SMALLINT NOT NULL CHECK (stars BETWEEN 1 AND 5),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(game_id, rater_id, rated_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_ratings_rated ON ratings(rated_id);
+CREATE INDEX IF NOT EXISTS idx_ratings_game  ON ratings(game_id);

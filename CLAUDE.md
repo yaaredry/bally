@@ -208,12 +208,75 @@ Custom colors in `tailwind.config.js`:
 
 ---
 
+## Admin Dashboard
+
+URL: `http://localhost:5173/admin/login` (separate from player login)
+
+**Credentials:** `admin@bally.app` / `chino1234!`
+
+### Routes
+| Path | Page |
+|---|---|
+| /admin/login | Admin login (separate, dark theme) |
+| /admin/dashboard | Metrics overview |
+| /admin/users | User list with search/filter/suspend |
+| /admin/users/:id | User detail: edit profile, reset password, suspend, ratings, game history |
+| /admin/games | Game list with filters |
+| /admin/games/:id | Game detail: roster management, clear chat, cancel |
+| /admin/locations | Location CRUD (curated beach list) |
+| /admin/ratings | All ratings, delete individual |
+| /admin/matching | Level distribution + unplayed same-level pair suggestions |
+
+### Backend
+- `server/src/middleware/requireAdmin.js` — checks `is_admin` on JWT
+- `server/src/routes/admin.js` — all admin endpoints under `/api/admin/*`
+
+### Auth flow
+- Admin uses the same `/api/auth/login` endpoint; server includes `is_admin` in the JWT
+- `AdminAuthContext` verifies `is_admin` flag after login; rejects non-admin accounts
+- Admin session is cookie-based (same httpOnly cookie as player app)
+
+---
+
+## Ratings
+
+- Players rate each other after a game is marked **completed**
+- Rating window: **7 days** from game date; no ratings accepted after that
+- Scale: **1–5 stars**
+- One rating per rater/rated pair per game
+- Endpoints: `POST /api/games/:id/rate`, `GET /api/games/:id/my-ratings`
+- Average rating shown on player profiles and in admin user detail
+
+---
+
+## Locations (curated)
+
+- Admin-managed list stored in `locations` table
+- Active locations served at `GET /api/locations` (public, no auth)
+- Create Game uses a dropdown populated from this list + "Other / Custom" option
+- Custom locations still allow a free-text name + map pin drop
+
+---
+
 ## Deployment Target (future)
 
 - GCP VM + Cloudflare DNS
 - Prod Docker Compose: db + server + nginx
 - Nginx serves static client build, proxies `/api` and `/socket.io` to server container
 - Prod npm install inside Docker still needs a solution (macOS Docker Desktop has TLS/network issues with npm registry during image build)
+
+---
+
+## Schema (updated)
+
+New columns on `users`: `is_active BOOLEAN DEFAULT TRUE`, `is_admin BOOLEAN DEFAULT FALSE`
+
+New tables:
+```
+locations   id, name, lat, lng, is_active, created_at
+ratings     id, game_id, rater_id, rated_id, stars (1-5), created_at
+            UNIQUE(game_id, rater_id, rated_id)
+```
 
 ---
 

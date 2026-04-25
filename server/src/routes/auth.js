@@ -55,7 +55,7 @@ router.post('/login', async (req, res) => {
 
   try {
     const result = await pool.query(
-      'SELECT id, email, password_hash, display_name, sports, skill_level, home_beach, avatar_seed, games_hosted, games_played FROM users WHERE email = $1',
+      'SELECT id, email, password_hash, display_name, sports, skill_level, home_beach, avatar_seed, games_hosted, games_played, is_active, is_admin FROM users WHERE email = $1',
       [email.toLowerCase()]
     );
 
@@ -69,7 +69,11 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
-    const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    if (!user.is_active) {
+      return res.status(403).json({ error: 'Account suspended. Please contact support.' });
+    }
+
+    const token = jwt.sign({ id: user.id, email: user.email, is_admin: user.is_admin }, process.env.JWT_SECRET, { expiresIn: '7d' });
     const { password_hash: _, ...safeUser } = user;
 
     res.cookie('token', token, cookieOpts());

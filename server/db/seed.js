@@ -23,6 +23,13 @@ const USERS = [
   { email: 'rina@bally.app',  name: 'Rina Goldberg',  sports: ['Footvolley'],                    skill: 'E',      beach: 'Bat Yam Beach',   avatar: AVATAR_SEEDS[9] },
 ];
 
+// Admin user — password: chino1234!
+const ADMIN = {
+  email: 'admin@bally.app',
+  name: 'Admin',
+  avatar: AVATAR_SEEDS[0],
+};
+
 const LOCATIONS = [
   { name: 'Gordon Beach',      lat: 32.0853, lng: 34.7618 },
   { name: 'Frishman Beach',    lat: 32.0869, lng: 34.7624 },
@@ -40,15 +47,28 @@ const NOTES = ['Bring your own ball', 'Beginners welcome!', 'Competitive game, c
 
 async function seed() {
   try {
+    await pool.query('DELETE FROM ratings');
     await pool.query('DELETE FROM chat_messages');
     await pool.query('DELETE FROM game_requests');
     await pool.query('DELETE FROM games');
     await pool.query('DELETE FROM users');
+    await pool.query('DELETE FROM locations');
     console.log('Cleared existing data');
 
+    // Seed locations
+    for (const loc of LOCATIONS) {
+      await pool.query(
+        'INSERT INTO locations (name, lat, lng) VALUES ($1,$2,$3)',
+        [loc.name, loc.lat, loc.lng]
+      );
+    }
+    console.log(`Inserted ${LOCATIONS.length} locations`);
+
     const hash = await bcrypt.hash('password123', 12);
+    const adminHash = await bcrypt.hash('chino1234!', 12);
     const userIds = [];
 
+    // Seed regular users
     for (const u of USERS) {
       const r = await pool.query(
         `INSERT INTO users (email, password_hash, display_name, home_beach, sports, skill_level, avatar_seed)
@@ -57,7 +77,14 @@ async function seed() {
       );
       userIds.push(r.rows[0].id);
     }
-    console.log(`Inserted ${userIds.length} users`);
+
+    // Seed admin user
+    await pool.query(
+      `INSERT INTO users (email, password_hash, display_name, avatar_seed, is_admin)
+       VALUES ($1,$2,$3,$4,TRUE)`,
+      [ADMIN.email, adminHash, ADMIN.name, ADMIN.avatar]
+    );
+    console.log(`Inserted ${userIds.length} users + 1 admin`);
 
     const now = new Date();
     const gameIds = [];
@@ -76,17 +103,23 @@ async function seed() {
       gameDate.setDate(gameDate.getDate() + daysOffset);
       gameDate.setHours(hours, 0, 0, 0);
 
+      // Games in the past (daysOffset < 0) that are recent enough for ratings get status 'completed'
+      const isPast = daysOffset < 0;
+      const status = isPast ? 'completed' : 'open';
+
       const r = await pool.query(
-        `INSERT INTO games (host_id, sport, format, skill_level, game_date, duration_hours, location_name, location, max_players, notes)
-         VALUES ($1,$2,$3,$4,$5,$6,$7, ST_SetSRID(ST_MakePoint($8,$9), 4326), $10,$11) RETURNING id`,
-        [userIds[hostIdx], sport, format, skill, gameDate.toISOString(), [1, 1.5, 2, 2.5][i % 4], loc.name, loc.lng, loc.lat, maxPlayers, NOTES[i % 4]]
+        `INSERT INTO games (host_id, sport, format, skill_level, game_date, duration_hours, location_name, location, max_players, notes, status)
+         VALUES ($1,$2,$3,$4,$5,$6,$7, ST_SetSRID(ST_MakePoint($8,$9), 4326), $10,$11,$12) RETURNING id`,
+        [userIds[hostIdx], sport, format, skill, gameDate.toISOString(), [1, 1.5, 2, 2.5][i % 4], loc.name, loc.lng, loc.lat, maxPlayers, NOTES[i % 4], status]
       );
-      gameIds.push(r.rows[0].id);
+      gameIds.push({ id: r.rows[0].id, isPast, hostIdx });
     }
     console.log(`Inserted ${gameIds.length} games`);
 
+    const requestMap = {}; // gameId -> [playerIds approved]
     for (let i = 0; i < gameIds.length; i++) {
-      const hostIdx = i % userIds.length;
+      const { id: gameId, hostIdx } = gameIds[i];
+      requestMap[gameId] = [userIds[hostIdx]]; // host is always in the game
       const requestCount = 1 + (i % 3);
       for (let j = 1; j <= requestCount; j++) {
         const playerIdx = (hostIdx + j) % userIds.length;
@@ -94,20 +127,46 @@ async function seed() {
         try {
           await pool.query(
             'INSERT INTO game_requests (game_id, player_id, status) VALUES ($1,$2,$3)',
-            [gameIds[i], userIds[playerIdx], status]
+            [gameId, userIds[playerIdx], status]
           );
+          if (status === 'approved') requestMap[gameId].push(userIds[playerIdx]);
         } catch {
           // skip duplicates
         }
       }
     }
 
+    // Seed sample ratings for completed games
+    let ratingsInserted = 0;
+    for (const { id: gameId, isPast } of gameIds) {
+      if (!isPast) continue;
+      const players = requestMap[gameId];
+      if (players.length < 2) continue;
+      // Each player rates the next player (circular, skip self)
+      for (let i = 0; i < players.length; i++) {
+        const rater = players[i];
+        const rated = players[(i + 1) % players.length];
+        if (rater === rated) continue;
+        const stars = 3 + (ratingsInserted % 3); // 3, 4, or 5 stars
+        try {
+          await pool.query(
+            'INSERT INTO ratings (game_id, rater_id, rated_id, stars) VALUES ($1,$2,$3,$4)',
+            [gameId, rater, rated, stars]
+          );
+          ratingsInserted++;
+        } catch {
+          // skip duplicates
+        }
+      }
+    }
+    console.log(`Inserted ${ratingsInserted} ratings`);
+
     await pool.query(`UPDATE users u SET games_hosted = (SELECT COUNT(*) FROM games WHERE host_id = u.id AND status != 'cancelled')`);
     await pool.query(`UPDATE users u SET games_played = (SELECT COUNT(*) FROM game_requests WHERE player_id = u.id AND status = 'approved')`);
 
     console.log('\nSeed complete!');
-    console.log('Login with any user above, password: password123');
-    console.log('Example: alex@bally.app / password123');
+    console.log('Player login: alex@bally.app / password123 (any seeded user)');
+    console.log('Admin login:  admin@bally.app / chino1234!');
     process.exit(0);
   } catch (err) {
     console.error('Seed error:', err);

@@ -285,4 +285,80 @@ router.post('/:id/complete', authenticate, async (req, res) => {
   }
 });
 
+// GET /api/games/:id/my-ratings — returns who the current user has already rated in this game
+router.get('/:id/my-ratings', authenticate, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT rated_id FROM ratings WHERE game_id = $1 AND rater_id = $2',
+      [req.params.id, req.user.id]
+    );
+    res.json({ rated_ids: result.rows.map(r => r.rated_id) });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// POST /api/games/:id/rate
+router.post('/:id/rate', authenticate, async (req, res) => {
+  const { rated_id, stars } = req.body;
+  if (!rated_id || !stars || stars < 1 || stars > 5) {
+    return res.status(400).json({ error: 'rated_id and stars (1-5) are required' });
+  }
+  if (rated_id === req.user.id) {
+    return res.status(400).json({ error: 'Cannot rate yourself' });
+  }
+
+  try {
+    const game = await pool.query(
+      "SELECT status, game_date FROM games WHERE id = $1",
+      [req.params.id]
+    );
+    if (!game.rows.length) return res.status(404).json({ error: 'Game not found' });
+
+    const { status, game_date } = game.rows[0];
+    if (status !== 'completed') {
+      return res.status(400).json({ error: 'Game is not completed yet' });
+    }
+
+    const daysSince = (Date.now() - new Date(game_date).getTime()) / (1000 * 60 * 60 * 24);
+    if (daysSince > 7) {
+      return res.status(400).json({ error: 'Rating window has closed (7 days after game)' });
+    }
+
+    // Verify rater was in the game (host or approved player)
+    const participation = await pool.query(
+      `SELECT 1 FROM games WHERE id = $1 AND host_id = $2
+       UNION
+       SELECT 1 FROM game_requests WHERE game_id = $1 AND player_id = $2 AND status = 'approved'`,
+      [req.params.id, req.user.id]
+    );
+    if (!participation.rows.length) {
+      return res.status(403).json({ error: 'You were not part of this game' });
+    }
+
+    // Verify rated_id was also in the game
+    const ratedParticipation = await pool.query(
+      `SELECT 1 FROM games WHERE id = $1 AND host_id = $2
+       UNION
+       SELECT 1 FROM game_requests WHERE game_id = $1 AND player_id = $2 AND status = 'approved'`,
+      [req.params.id, rated_id]
+    );
+    if (!ratedParticipation.rows.length) {
+      return res.status(400).json({ error: 'Rated player was not part of this game' });
+    }
+
+    await pool.query(
+      'INSERT INTO ratings (game_id, rater_id, rated_id, stars) VALUES ($1,$2,$3,$4)',
+      [req.params.id, req.user.id, rated_id, stars]
+    );
+
+    res.status(201).json({ message: 'Rating submitted' });
+  } catch (err) {
+    if (err.code === '23505') return res.status(400).json({ error: 'Already rated this player for this game' });
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 module.exports = router;

@@ -8,6 +8,7 @@ require('dotenv').config();
 const authRoutes = require('./routes/auth');
 const gameRoutes = require('./routes/games');
 const playerRoutes = require('./routes/players');
+const adminRoutes = require('./routes/admin');
 const setupChat = require('./socket/chat');
 
 const app = express();
@@ -29,8 +30,20 @@ app.use(cookieParser());
 app.use('/api/auth', authRoutes);
 app.use('/api/games', gameRoutes);
 app.use('/api/players', playerRoutes);
+app.use('/api/admin', adminRoutes);
 
 setupChat(io);
+
+// Public: curated location list for game creation dropdown
+const pool = require('./config/db');
+app.get('/api/locations', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT id, name, lat, lng FROM locations WHERE is_active = TRUE ORDER BY name');
+    res.json({ locations: result.rows });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
