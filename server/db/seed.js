@@ -30,14 +30,21 @@ const ADMIN = {
   avatar: AVATAR_SEEDS[0],
 };
 
+// Tel Aviv beaches, roughly north to south
 const LOCATIONS = [
-  { name: 'Gordon Beach',      lat: 32.0853, lng: 34.7618 },
-  { name: 'Frishman Beach',    lat: 32.0869, lng: 34.7624 },
-  { name: 'Jerusalem Beach',   lat: 32.0924, lng: 34.7629 },
-  { name: 'Hilton Beach',      lat: 32.0938, lng: 34.7621 },
-  { name: 'Tel Baruch Beach',  lat: 32.1328, lng: 34.7637 },
-  { name: 'Bat Yam Beach',     lat: 32.0172, lng: 34.7503 },
-  { name: 'Herzliya Beach',    lat: 32.1640, lng: 34.7980 },
+  { name: 'North Tsuk Beach (Mandarin)',      lat: 32.1932, lng: 34.7998 },
+  { name: 'South Tsuk Beach (Sea & Sun)',     lat: 32.1856, lng: 34.7968 },
+  { name: 'Mezitzim Beach',                   lat: 32.1000, lng: 34.7628 },
+  { name: 'The Religious Beach',              lat: 32.0965, lng: 34.7623 },
+  { name: 'Hilton Beach',                     lat: 32.0938, lng: 34.7621 },
+  { name: 'Gordon Beach',                     lat: 32.0869, lng: 34.7624 },
+  { name: 'Frischmann Beach',                 lat: 32.0853, lng: 34.7618 },
+  { name: 'Bograshov Beach',                  lat: 32.0817, lng: 34.7613 },
+  { name: 'Jerusalem Beach (Geula)',          lat: 32.0780, lng: 34.7607 },
+  { name: 'Charles Clore Beach',              lat: 32.0748, lng: 34.7597 },
+  { name: 'Aviv Beach',                       lat: 32.0718, lng: 34.7587 },
+  { name: "Ha'Maravi Beach (Manta Ray)",      lat: 32.0682, lng: 34.7572 },
+  { name: 'Tel Baruch Beach',                 lat: 32.1328, lng: 34.7637 },
 ];
 
 const FORMATS = ['2v2', '3v3', '4v4'];
