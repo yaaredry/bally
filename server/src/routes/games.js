@@ -106,6 +106,15 @@ router.get('/:id', authenticate, async (req, res) => {
     game.my_request_id = myReq.rows[0]?.id || null;
     game.my_request_status = myReq.rows[0]?.status || null;
 
+    // Gear contributions
+    const gearResult = await pool.query(
+      `SELECT gg.item, gg.player_id, u.display_name, u.avatar_seed
+       FROM game_gear gg JOIN users u ON u.id = gg.player_id
+       WHERE gg.game_id = $1 ORDER BY gg.created_at`,
+      [req.params.id]
+    );
+    game.gear = gearResult.rows;
+
     const isHost = game.host_id === req.user.id;
     const isApproved = rosterResult.rows.some(r => r.id === req.user.id);
 
@@ -279,6 +288,47 @@ router.post('/:id/complete', authenticate, async (req, res) => {
 
     await pool.query("UPDATE games SET status = 'completed' WHERE id = $1", [req.params.id]);
     res.json({ message: 'Game marked as completed' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// POST /api/games/:id/gear — declare you'll bring an item
+router.post('/:id/gear', authenticate, async (req, res) => {
+  const { item } = req.body;
+  const VALID = ['ball', 'lines', 'speaker', 'hose'];
+  if (!VALID.includes(item)) return res.status(400).json({ error: 'Invalid gear item' });
+
+  try {
+    // Must be host or approved player
+    const access = await pool.query(
+      `SELECT 1 FROM games WHERE id = $1 AND host_id = $2
+       UNION
+       SELECT 1 FROM game_requests WHERE game_id = $1 AND player_id = $2 AND status = 'approved'`,
+      [req.params.id, req.user.id]
+    );
+    if (!access.rows.length) return res.status(403).json({ error: 'Not part of this game' });
+
+    await pool.query(
+      'INSERT INTO game_gear (game_id, player_id, item) VALUES ($1,$2,$3) ON CONFLICT DO NOTHING',
+      [req.params.id, req.user.id, item]
+    );
+    res.status(201).json({ message: 'Gear added' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// DELETE /api/games/:id/gear/:item — remove your declared gear
+router.delete('/:id/gear/:item', authenticate, async (req, res) => {
+  try {
+    await pool.query(
+      'DELETE FROM game_gear WHERE game_id = $1 AND player_id = $2 AND item = $3',
+      [req.params.id, req.user.id, req.params.item]
+    );
+    res.json({ message: 'Gear removed' });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });

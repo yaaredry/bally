@@ -89,3 +89,14 @@ CREATE TABLE IF NOT EXISTS ratings (
 
 CREATE INDEX IF NOT EXISTS idx_ratings_rated ON ratings(rated_id);
 CREATE INDEX IF NOT EXISTS idx_ratings_game  ON ratings(game_id);
+
+-- Game gear contributions (who is bringing what)
+CREATE TABLE IF NOT EXISTS game_gear (
+  game_id    UUID NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+  player_id  UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  item       VARCHAR(30) NOT NULL CHECK (item IN ('ball', 'lines', 'speaker', 'hose')),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (game_id, player_id, item)
+);
+
+CREATE INDEX IF NOT EXISTS idx_gear_game ON game_gear(game_id);

@@ -11,6 +11,13 @@ import SkillBadge from '../components/SkillBadge';
 
 const SPORT_ICON = { 'Beach Volleyball': '🏐', 'Footvolley': '⚽', 'Teqball': '🏓' };
 
+const GEAR_ITEMS = [
+  { id: 'ball',    label: 'Ball',    emoji: '🏐' },
+  { id: 'lines',   label: 'Lines',   emoji: '📏' },
+  { id: 'speaker', label: 'Speaker', emoji: '🔊' },
+  { id: 'hose',    label: 'Hose',    emoji: '💧' },
+];
+
 export default function GameDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -19,6 +26,7 @@ export default function GameDetail() {
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [gear, setGear] = useState([]);
 
   const shareGame = async () => {
     const url = `${window.location.origin}/games/${id}`;
@@ -45,6 +53,7 @@ export default function GameDetail() {
       .then(res => {
         setGame(res.data.game);
         setMessages(res.data.game.chat_messages || []);
+        setGear(res.data.game.gear || []);
       })
       .catch(() => navigate('/'))
       .finally(() => setLoading(false));
@@ -76,6 +85,21 @@ export default function GameDetail() {
       alert(err.response?.data?.error || 'Could not join');
     } finally {
       setJoining(false);
+    }
+  };
+
+  const toggleGear = async (item) => {
+    const isBringing = gear.some(g => g.item === item && g.player_id === user.id);
+    try {
+      if (isBringing) {
+        await api.delete(`/games/${id}/gear/${item}`);
+        setGear(prev => prev.filter(g => !(g.item === item && g.player_id === user.id)));
+      } else {
+        await api.post(`/games/${id}/gear`, { item });
+        setGear(prev => [...prev, { item, player_id: user.id, display_name: user.display_name, avatar_seed: user.avatar_seed }]);
+      }
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -219,6 +243,57 @@ export default function GameDetail() {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Gear */}
+        {(game.can_chat || isHost) && (
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Gear</p>
+            <div className="grid grid-cols-2 gap-2">
+              {GEAR_ITEMS.map(({ id: item, label, emoji }) => {
+                const bringers = gear.filter(g => g.item === item);
+                const iMBringing = bringers.some(g => g.player_id === user.id);
+                return (
+                  <button
+                    key={item}
+                    type="button"
+                    onClick={() => toggleGear(item)}
+                    className={`flex flex-col gap-1.5 p-3 rounded-xl border-2 text-left transition-all ${
+                      iMBringing
+                        ? 'border-brand-500 bg-brand-50'
+                        : 'border-slate-200 bg-white hover:border-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl">{emoji}</span>
+                      <span className={`text-sm font-semibold ${iMBringing ? 'text-brand-700' : 'text-slate-700'}`}>
+                        {label}
+                      </span>
+                    </div>
+                    {bringers.length > 0 ? (
+                      <div className="flex flex-wrap gap-1 mt-0.5">
+                        {bringers.map(g => (
+                          <span
+                            key={g.player_id}
+                            className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${
+                              g.player_id === user.id
+                                ? 'bg-brand-100 text-brand-700'
+                                : 'bg-slate-100 text-slate-600'
+                            }`}
+                          >
+                            {g.player_id === user.id ? 'You' : g.display_name.split(' ')[0]}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-slate-400">Nobody yet</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-xs text-slate-400 mt-2">Tap an item to say you'll bring it</p>
           </div>
         )}
 
