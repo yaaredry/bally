@@ -41,6 +41,7 @@ const LOCATIONS = [
   { city: 'Tel Aviv', name: 'Hilton Beach',                 lat: 32.0938, lng: 34.7621 },
   { city: 'Tel Aviv', name: 'Gordon Beach',                 lat: 32.0869, lng: 34.7624 },
   { city: 'Tel Aviv', name: 'Frischmann Beach',             lat: 32.0853, lng: 34.7618 },
+  { city: 'Tel Aviv', name: 'Trumpeldor Beach',             lat: 32.0838, lng: 34.7616 },
   { city: 'Tel Aviv', name: 'Bograshov Beach',              lat: 32.0817, lng: 34.7613 },
   { city: 'Tel Aviv', name: 'Jerusalem Beach (Geula)',      lat: 32.0780, lng: 34.7607 },
   { city: 'Tel Aviv', name: 'Charles Clore Beach',          lat: 32.0748, lng: 34.7597 },
