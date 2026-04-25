@@ -3,13 +3,13 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import { format } from 'date-fns';
 import { io } from 'socket.io-client';
-import { ChevronLeft, Clock, MapPin, Users, Send, Settings, Lock } from 'lucide-react';
+import { ChevronLeft, Clock, MapPin, Users, Send, Settings, Lock, Share2, Check } from 'lucide-react';
 import api from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import AvatarDisplay from '../components/AvatarDisplay';
 import SkillBadge from '../components/SkillBadge';
 
-const SPORT_ICON = { 'Beach Volleyball': '🏐', 'Footvolley': '⚽' };
+const SPORT_ICON = { 'Beach Volleyball': '🏐', 'Footvolley': '⚽', 'Teqball': '🏓' };
 
 export default function GameDetail() {
   const { id } = useParams();
@@ -18,6 +18,23 @@ export default function GameDetail() {
   const [game, setGame] = useState(null);
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const shareGame = async () => {
+    const url = `${window.location.origin}/games/${id}`;
+    const shareData = {
+      title: `${SPORT_ICON[game?.sport] || '🏐'} ${game?.sport} · ${game?.format}`,
+      text: `Join my game at ${game?.location_name}!`,
+      url,
+    };
+    if (navigator.share && navigator.canShare?.(shareData)) {
+      try { await navigator.share(shareData); } catch { /* cancelled */ }
+    } else {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
   const [messages, setMessages] = useState([]);
   const [msgInput, setMsgInput] = useState('');
   const socketRef = useRef(null);
@@ -101,11 +118,20 @@ export default function GameDetail() {
         <h1 className="text-lg font-bold text-slate-800">
           {SPORT_ICON[game.sport]} {game.sport} · {game.format}
         </h1>
-        {isHost && (
-          <button onClick={() => navigate(`/host/${id}`)} className="ml-auto p-1.5 rounded-xl bg-slate-100 text-slate-600">
-            <Settings size={18} />
+        <div className="ml-auto flex items-center gap-2">
+          <button
+            onClick={shareGame}
+            className="p-1.5 rounded-xl bg-slate-100 text-slate-600 relative"
+            title="Share game"
+          >
+            {copied ? <Check size={18} className="text-green-600" /> : <Share2 size={18} />}
           </button>
-        )}
+          {isHost && (
+            <button onClick={() => navigate(`/host/${id}`)} className="p-1.5 rounded-xl bg-slate-100 text-slate-600">
+              <Settings size={18} />
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="p-4 space-y-4 pb-8">
