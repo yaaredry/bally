@@ -7,8 +7,9 @@ import AvatarDisplay from '../components/AvatarDisplay';
 import AvatarPicker from '../components/AvatarPicker';
 import SkillBadge from '../components/SkillBadge';
 
+import { SKILL_LEVELS_BY_SPORT } from '../lib/skillLevels';
+
 const SPORTS = ['Beach Volleyball', 'Footvolley'];
-const SKILL_LEVELS = ['Beginner', 'Intermediate', 'Advanced', 'Elite'];
 
 export default function Profile() {
   const { user, logout, updateUser } = useAuth();
@@ -25,9 +26,15 @@ export default function Profile() {
   });
 
   const set = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
-  const toggleSport = (sport) => set('sports',
-    form.sports.includes(sport) ? form.sports.filter(s => s !== sport) : [...form.sports, sport]
-  );
+  const toggleSport = (sport) => {
+    const next = form.sports.includes(sport)
+      ? form.sports.filter(s => s !== sport)
+      : [...form.sports, sport];
+    set('sports', next);
+    set('skill_level', '');
+  };
+
+  const selectedSports = SPORTS.filter(s => form.sports.includes(s));
 
   const handleSave = async () => {
     setSaving(true);
@@ -125,19 +132,30 @@ export default function Profile() {
                 ))}
               </div>
             </div>
-            <div>
-              <label className="text-xs text-slate-500 mb-1 block">Skill level</label>
-              <div className="grid grid-cols-2 gap-2">
-                {SKILL_LEVELS.map(lvl => (
-                  <button key={lvl} type="button" onClick={() => set('skill_level', lvl)}
-                    className={`py-2 rounded-xl border-2 text-xs font-medium transition-all ${
-                      form.skill_level === lvl ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-slate-200 text-slate-600'
-                    }`}>
-                    {lvl}
-                  </button>
+            {selectedSports.length > 0 && (
+              <div>
+                <label className="text-xs text-slate-500 mb-1 block">Skill level</label>
+                {selectedSports.map(sport => (
+                  <div key={sport} className="mb-2">
+                    {selectedSports.length > 1 && (
+                      <p className="text-xs text-slate-400 mb-1">
+                        {sport === 'Beach Volleyball' ? '🏐' : '⚽'} {sport}
+                      </p>
+                    )}
+                    <div className="flex flex-wrap gap-1.5">
+                      {SKILL_LEVELS_BY_SPORT[sport].map(lvl => (
+                        <button key={lvl} type="button" onClick={() => set('skill_level', lvl)}
+                          className={`py-1.5 px-2.5 rounded-xl border-2 text-xs font-medium transition-all ${
+                            form.skill_level === lvl ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-slate-200 text-slate-600'
+                          }`}>
+                          {lvl}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
-            </div>
+            )}
           </div>
         ) : (
           <div className="space-y-2">

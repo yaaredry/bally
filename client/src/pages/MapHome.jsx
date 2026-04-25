@@ -6,17 +6,13 @@ import { List, Map as MapIcon, SlidersHorizontal, X } from 'lucide-react';
 import { format } from 'date-fns';
 import api from '../api/client';
 import GameCard from '../components/GameCard';
-import SkillBadge from '../components/SkillBadge';
+import { SKILL_HEX, SKILL_LEVELS_BY_SPORT } from '../lib/skillLevels';
 
 const SPORT_ICON = { 'Beach Volleyball': '🏐', 'Footvolley': '⚽' };
-const SKILL_COLORS = {
-  'Beginner': '#22c55e', 'Intermediate': '#3b82f6',
-  'Advanced': '#f97316', 'Elite': '#a855f7', 'All welcome': '#64748b',
-};
 
 const createGameIcon = (game) => L.divIcon({
   className: '',
-  html: `<div style="background:${SKILL_COLORS[game.skill_level] || '#0ea5e9'};width:40px;height:40px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.25);border:2px solid white;">
+  html: `<div style="background:${SKILL_HEX[game.skill_level] || '#0ea5e9'};width:40px;height:40px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.25);border:2px solid white;">
     <span style="transform:rotate(45deg);font-size:18px;line-height:1;">${SPORT_ICON[game.sport] || '🏐'}</span>
   </div>`,
   iconSize: [40, 40],
@@ -33,7 +29,6 @@ function LocationSetter({ position }) {
 }
 
 const FORMATS = ['2v2', '3v3', '4v4'];
-const SKILLS = ['Beginner', 'Intermediate', 'Advanced', 'Elite'];
 const SPORTS_LIST = ['Beach Volleyball', 'Footvolley'];
 
 export default function MapHome() {
@@ -141,14 +136,18 @@ export default function MapHome() {
             </div>
             <div>
               <p className="text-xs font-semibold text-slate-500 mb-1.5">Skill</p>
-              <div className="flex gap-1.5 flex-wrap">
-                {SKILLS.map(s => (
-                  <button key={s} onClick={() => setFilters(prev => ({ ...prev, skill_level: prev.skill_level === s ? '' : s }))}
-                    className={`py-1 px-2.5 rounded-lg text-xs font-medium border transition-all ${filters.skill_level === s ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-slate-200 text-slate-600'}`}>
-                    {s}
-                  </button>
-                ))}
-              </div>
+              {filters.sport ? (
+                <div className="flex gap-1.5 flex-wrap">
+                  {[...( SKILL_LEVELS_BY_SPORT[filters.sport] || []), 'All welcome'].map(s => (
+                    <button key={s} onClick={() => setFilters(prev => ({ ...prev, skill_level: prev.skill_level === s ? '' : s }))}
+                      className={`py-1 px-2.5 rounded-lg text-xs font-medium border transition-all ${filters.skill_level === s ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-slate-200 text-slate-600'}`}>
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-slate-400">Select a sport to filter by skill level</p>
+              )}
             </div>
             <div>
               <p className="text-xs font-semibold text-slate-500 mb-1.5">Format</p>

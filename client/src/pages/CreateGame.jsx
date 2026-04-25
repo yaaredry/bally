@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import { ChevronLeft } from 'lucide-react';
 import api from '../api/client';
+import { SKILL_LEVELS_BY_SPORT } from '../lib/skillLevels';
 
 const SPORTS = ['Beach Volleyball', 'Footvolley'];
 const FORMATS = ['2v2', '3v3', '4v4', 'Custom'];
-const SKILLS = ['Beginner', 'Intermediate', 'Advanced', 'Elite', 'All welcome'];
 const DURATIONS = [1, 1.5, 2, 2.5, 3];
 const MAX_PLAYERS_DEFAULT = { '2v2': 4, '3v3': 6, '4v4': 8, 'Custom': 8 };
 
@@ -47,6 +47,15 @@ export default function CreateGame() {
     set('format', fmt);
     set('max_players', MAX_PLAYERS_DEFAULT[fmt] || 8);
   };
+
+  const handleSportChange = (sport) => {
+    set('sport', sport);
+    set('skill_level', ''); // reset when sport changes
+  };
+
+  const skillOptions = form.sport
+    ? [...(SKILL_LEVELS_BY_SPORT[form.sport] || []), 'All welcome']
+    : [];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -91,7 +100,7 @@ export default function CreateGame() {
           <label className="block text-sm font-semibold text-slate-700 mb-2">Sport</label>
           <div className="flex gap-2">
             {SPORTS.map(s => (
-              <button key={s} type="button" onClick={() => set('sport', s)}
+              <button key={s} type="button" onClick={() => handleSportChange(s)}
                 className={`flex-1 py-3 rounded-xl border-2 text-sm font-medium transition-all ${
                   form.sport === s ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-slate-200 text-slate-600'
                 }`}>
@@ -119,16 +128,20 @@ export default function CreateGame() {
         {/* Skill level */}
         <div>
           <label className="block text-sm font-semibold text-slate-700 mb-2">Skill level required</label>
-          <div className="flex flex-wrap gap-2">
-            {SKILLS.map(s => (
-              <button key={s} type="button" onClick={() => set('skill_level', s)}
-                className={`py-2 px-3 rounded-xl border-2 text-sm font-medium transition-all ${
-                  form.skill_level === s ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-slate-200 text-slate-600'
-                }`}>
-                {s}
-              </button>
-            ))}
-          </div>
+          {!form.sport ? (
+            <p className="text-xs text-slate-400">Select a sport first</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {skillOptions.map(s => (
+                <button key={s} type="button" onClick={() => set('skill_level', s)}
+                  className={`py-2 px-3 rounded-xl border-2 text-sm font-medium transition-all ${
+                    form.skill_level === s ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-slate-200 text-slate-600'
+                  }`}>
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Date/Time & Duration */}

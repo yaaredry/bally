@@ -8,17 +8,19 @@ const AVATAR_SEEDS = [
   'volley-star', 'beach-pro', 'foot-wizard', 'court-legend',
 ];
 
+// Beach Volleyball uses numeric levels 1-7 (1=lowest)
+// Footvolley uses letter levels E-A + League (E=lowest, League=highest)
 const USERS = [
-  { email: 'alex@bally.app',  name: 'Alex Chen',      sports: ['Beach Volleyball'],              skill: 'Advanced',     beach: 'Gordon Beach',    avatar: AVATAR_SEEDS[0] },
-  { email: 'maya@bally.app',  name: 'Maya Levi',      sports: ['Beach Volleyball', 'Footvolley'], skill: 'Elite',        beach: 'Frishman Beach',  avatar: AVATAR_SEEDS[1] },
-  { email: 'tom@bally.app',   name: 'Tom Katz',       sports: ['Footvolley'],                    skill: 'Intermediate', beach: 'Hilton Beach',    avatar: AVATAR_SEEDS[2] },
-  { email: 'sara@bally.app',  name: 'Sara Mizrahi',   sports: ['Beach Volleyball'],              skill: 'Beginner',     beach: 'Gordon Beach',    avatar: AVATAR_SEEDS[3] },
-  { email: 'yoni@bally.app',  name: 'Yoni Bar',       sports: ['Beach Volleyball', 'Footvolley'], skill: 'Advanced',     beach: 'Tel Baruch',      avatar: AVATAR_SEEDS[4] },
-  { email: 'dana@bally.app',  name: 'Dana Shapiro',   sports: ['Beach Volleyball'],              skill: 'Intermediate', beach: 'Jerusalem Beach', avatar: AVATAR_SEEDS[5] },
-  { email: 'ido@bally.app',   name: 'Ido Oren',       sports: ['Footvolley'],                    skill: 'Elite',        beach: 'Hilton Beach',    avatar: AVATAR_SEEDS[6] },
-  { email: 'noa@bally.app',   name: 'Noa Peretz',     sports: ['Beach Volleyball'],              skill: 'Intermediate', beach: 'Gordon Beach',    avatar: AVATAR_SEEDS[7] },
-  { email: 'eyal@bally.app',  name: 'Eyal Cohen',     sports: ['Beach Volleyball', 'Footvolley'], skill: 'Advanced',     beach: 'Frishman Beach',  avatar: AVATAR_SEEDS[8] },
-  { email: 'rina@bally.app',  name: 'Rina Goldberg',  sports: ['Footvolley'],                    skill: 'Beginner',     beach: 'Bat Yam Beach',   avatar: AVATAR_SEEDS[9] },
+  { email: 'alex@bally.app',  name: 'Alex Chen',      sports: ['Beach Volleyball'],              skill: '5',      beach: 'Gordon Beach',    avatar: AVATAR_SEEDS[0] },
+  { email: 'maya@bally.app',  name: 'Maya Levi',      sports: ['Beach Volleyball', 'Footvolley'], skill: '7',      beach: 'Frishman Beach',  avatar: AVATAR_SEEDS[1] },
+  { email: 'tom@bally.app',   name: 'Tom Katz',       sports: ['Footvolley'],                    skill: 'B',      beach: 'Hilton Beach',    avatar: AVATAR_SEEDS[2] },
+  { email: 'sara@bally.app',  name: 'Sara Mizrahi',   sports: ['Beach Volleyball'],              skill: '2',      beach: 'Gordon Beach',    avatar: AVATAR_SEEDS[3] },
+  { email: 'yoni@bally.app',  name: 'Yoni Bar',       sports: ['Beach Volleyball', 'Footvolley'], skill: '6',      beach: 'Tel Baruch',      avatar: AVATAR_SEEDS[4] },
+  { email: 'dana@bally.app',  name: 'Dana Shapiro',   sports: ['Beach Volleyball'],              skill: '4',      beach: 'Jerusalem Beach', avatar: AVATAR_SEEDS[5] },
+  { email: 'ido@bally.app',   name: 'Ido Oren',       sports: ['Footvolley'],                    skill: 'League', beach: 'Hilton Beach',    avatar: AVATAR_SEEDS[6] },
+  { email: 'noa@bally.app',   name: 'Noa Peretz',     sports: ['Beach Volleyball'],              skill: '3',      beach: 'Gordon Beach',    avatar: AVATAR_SEEDS[7] },
+  { email: 'eyal@bally.app',  name: 'Eyal Cohen',     sports: ['Beach Volleyball', 'Footvolley'], skill: '5',      beach: 'Frishman Beach',  avatar: AVATAR_SEEDS[8] },
+  { email: 'rina@bally.app',  name: 'Rina Goldberg',  sports: ['Footvolley'],                    skill: 'E',      beach: 'Bat Yam Beach',   avatar: AVATAR_SEEDS[9] },
 ];
 
 const LOCATIONS = [

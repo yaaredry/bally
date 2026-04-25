@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS users (
   display_name  VARCHAR(100) NOT NULL,
   home_beach    VARCHAR(255),
   sports        TEXT[] DEFAULT '{}',
-  skill_level   VARCHAR(20) CHECK (skill_level IN ('Beginner', 'Intermediate', 'Advanced', 'Elite')),
+  skill_level   VARCHAR(20) CHECK (skill_level IN ('1','2','3','4','5','6','7','A','B','C','D','E','League')),
   avatar_seed   VARCHAR(100) DEFAULT 'beach-ace',
   games_hosted  INT DEFAULT 0,
   games_played  INT DEFAULT 0,

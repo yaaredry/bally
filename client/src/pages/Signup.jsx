@@ -3,9 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import AvatarPicker from '../components/AvatarPicker';
 import { AVATAR_SEEDS } from '../lib/avatars';
+import { SKILL_LEVELS_BY_SPORT } from '../lib/skillLevels';
 
 const SPORTS = ['Beach Volleyball', 'Footvolley'];
-const SKILL_LEVELS = ['Beginner', 'Intermediate', 'Advanced', 'Elite'];
 
 export default function Signup() {
   const { signup } = useAuth();
@@ -27,11 +27,15 @@ export default function Signup() {
   const set = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
 
   const toggleSport = (sport) => {
-    set('sports', form.sports.includes(sport)
+    const next = form.sports.includes(sport)
       ? form.sports.filter(s => s !== sport)
-      : [...form.sports, sport]
-    );
+      : [...form.sports, sport];
+    set('sports', next);
+    set('skill_level', ''); // reset level when sports change
   };
+
+  // Which sports to show skill level sections for
+  const selectedSports = SPORTS.filter(s => form.sports.includes(s));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -135,25 +139,36 @@ export default function Signup() {
                   ))}
                 </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Skill level</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {SKILL_LEVELS.map(lvl => (
-                    <button
-                      key={lvl}
-                      type="button"
-                      onClick={() => set('skill_level', lvl)}
-                      className={`py-2.5 rounded-xl border-2 text-sm font-medium transition-all ${
-                        form.skill_level === lvl
-                          ? 'border-brand-500 bg-brand-50 text-brand-700'
-                          : 'border-slate-200 text-slate-600 hover:border-slate-300'
-                      }`}
-                    >
-                      {lvl}
-                    </button>
+              {selectedSports.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Your skill level</label>
+                  {selectedSports.map(sport => (
+                    <div key={sport} className="mb-3">
+                      {selectedSports.length > 1 && (
+                        <p className="text-xs text-slate-400 mb-1.5">
+                          {sport === 'Beach Volleyball' ? '🏐 Beach Volleyball' : '⚽ Footvolley'}
+                        </p>
+                      )}
+                      <div className="flex flex-wrap gap-2">
+                        {SKILL_LEVELS_BY_SPORT[sport].map(lvl => (
+                          <button
+                            key={lvl}
+                            type="button"
+                            onClick={() => set('skill_level', lvl)}
+                            className={`py-2 px-3 rounded-xl border-2 text-sm font-medium transition-all ${
+                              form.skill_level === lvl
+                                ? 'border-brand-500 bg-brand-50 text-brand-700'
+                                : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                            }`}
+                          >
+                            {lvl}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   ))}
                 </div>
-              </div>
+              )}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Home beach (optional)</label>
                 <input
