@@ -25,6 +25,7 @@ export default function GameDetail() {
   const [game, setGame] = useState(null);
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
+  const [leaving, setLeaving] = useState(false);
   const [copied, setCopied] = useState(false);
   const [gear, setGear] = useState([]);
 
@@ -85,6 +86,20 @@ export default function GameDetail() {
       alert(err.response?.data?.error || 'Could not join');
     } finally {
       setJoining(false);
+    }
+  };
+
+  const handleLeave = async () => {
+    if (!window.confirm('Are you sure you want to leave this game?')) return;
+    setLeaving(true);
+    try {
+      await api.delete(`/games/${id}/leave`);
+      setGame(prev => ({ ...prev, my_request_status: null, approved_count: prev.approved_count - 1, slots_remaining: prev.slots_remaining + 1 }));
+      setGear(prev => prev.filter(g => g.player_id !== user.id));
+    } catch (err) {
+      alert(err.response?.data?.error || 'Could not leave game');
+    } finally {
+      setLeaving(false);
     }
   };
 
@@ -297,25 +312,36 @@ export default function GameDetail() {
           </div>
         )}
 
-        {/* Join button */}
+        {/* Join / Leave button */}
         {!isHost && (
-          <button
-            onClick={canJoin ? handleJoin : undefined}
-            disabled={!canJoin || joining}
-            className={`w-full py-4 rounded-2xl font-bold text-base transition-colors ${
-              game.my_request_status === 'approved'
-                ? 'bg-green-500 text-white'
-                : game.my_request_status === 'pending'
-                ? 'bg-yellow-100 text-yellow-700 cursor-default'
-                : game.my_request_status === 'declined'
-                ? 'bg-red-100 text-red-600 cursor-default'
-                : canJoin
-                ? 'bg-accent-500 hover:bg-accent-600 text-white shadow-lg shadow-accent-500/25'
-                : 'bg-slate-100 text-slate-400 cursor-default'
-            }`}
-          >
-            {joining ? 'Sending request…' : joinButtonLabel()}
-          </button>
+          <div className="space-y-2">
+            <button
+              onClick={canJoin ? handleJoin : undefined}
+              disabled={!canJoin || joining}
+              className={`w-full py-4 rounded-2xl font-bold text-base transition-colors ${
+                game.my_request_status === 'approved'
+                  ? 'bg-green-500 text-white'
+                  : game.my_request_status === 'pending'
+                  ? 'bg-yellow-100 text-yellow-700 cursor-default'
+                  : game.my_request_status === 'declined'
+                  ? 'bg-red-100 text-red-600 cursor-default'
+                  : canJoin
+                  ? 'bg-accent-500 hover:bg-accent-600 text-white shadow-lg shadow-accent-500/25'
+                  : 'bg-slate-100 text-slate-400 cursor-default'
+              }`}
+            >
+              {joining ? 'Sending request…' : joinButtonLabel()}
+            </button>
+            {game.my_request_status === 'approved' && !isPast && !isCancelled && game.status !== 'completed' && (
+              <button
+                onClick={handleLeave}
+                disabled={leaving}
+                className="w-full py-3 rounded-2xl font-semibold text-sm border-2 border-red-100 text-red-500 hover:bg-red-50 transition-colors"
+              >
+                {leaving ? 'Leaving…' : 'Leave game'}
+              </button>
+            )}
+          </div>
         )}
 
         {/* Chat */}
@@ -332,6 +358,19 @@ export default function GameDetail() {
                   <p className="text-center text-slate-400 text-sm py-4">No messages yet. Say hi!</p>
                 ) : (
                   messages.map(msg => {
+                    if (msg.is_system) {
+                      return (
+                        <div key={msg.id} className="flex flex-col items-center gap-0.5 py-1">
+                          <span className="text-xs text-slate-400 italic">Operator</span>
+                          <div className="bg-slate-100 text-slate-500 text-xs italic px-3 py-1.5 rounded-full text-center max-w-[85%]">
+                            {msg.message}
+                          </div>
+                          <span className="text-xs text-slate-400">
+                            {format(new Date(msg.created_at), 'h:mm a')}
+                          </span>
+                        </div>
+                      );
+                    }
                     const isMe = msg.sender_id === user.id;
                     return (
                       <div key={msg.id} className={`flex gap-2 ${isMe ? 'flex-row-reverse' : ''}`}>
