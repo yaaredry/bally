@@ -38,7 +38,7 @@ setupChat(io);
 const pool = require('./config/db');
 app.get('/api/locations', async (req, res) => {
   try {
-    const result = await pool.query('SELECT id, name, lat, lng FROM locations WHERE is_active = TRUE ORDER BY name');
+    const result = await pool.query('SELECT id, name, city, lat, lng FROM locations WHERE is_active = TRUE ORDER BY city, lat DESC');
     res.json({ locations: result.rows });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });

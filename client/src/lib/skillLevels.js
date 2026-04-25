@@ -1,6 +1,7 @@
 export const SKILL_LEVELS_BY_SPORT = {
   'Beach Volleyball': ['1', '2', '3', '4', '5', '6', '7'],
   'Footvolley':       ['E', 'D', 'C', 'B', 'A', 'League'],
+  'Teqball':          ['1', '2', '3', '4', '5', '6', '7'],
 };
 
 // Tailwind classes per level (lowest → highest within each sport)

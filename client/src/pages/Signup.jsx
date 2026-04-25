@@ -5,7 +5,8 @@ import AvatarPicker from '../components/AvatarPicker';
 import { AVATAR_SEEDS } from '../lib/avatars';
 import { SKILL_LEVELS_BY_SPORT } from '../lib/skillLevels';
 
-const SPORTS = ['Beach Volleyball', 'Footvolley'];
+const SPORTS = ['Beach Volleyball', 'Footvolley', 'Teqball'];
+const SPORT_LABEL = { 'Beach Volleyball': '🏐 Volleyball', 'Footvolley': '⚽ Footvolley', 'Teqball': '🏓 Teqball' };
 
 export default function Signup() {
   const { signup } = useAuth();
@@ -134,7 +135,7 @@ export default function Signup() {
                           : 'border-slate-200 text-slate-600 hover:border-slate-300'
                       }`}
                     >
-                      {sport === 'Beach Volleyball' ? '🏐 Volleyball' : '⚽ Footvolley'}
+                      {SPORT_LABEL[sport]}
                     </button>
                   ))}
                 </div>

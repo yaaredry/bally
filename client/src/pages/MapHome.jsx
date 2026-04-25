@@ -8,7 +8,7 @@ import api from '../api/client';
 import GameCard from '../components/GameCard';
 import { SKILL_HEX, SKILL_LEVELS_BY_SPORT } from '../lib/skillLevels';
 
-const SPORT_ICON = { 'Beach Volleyball': '🏐', 'Footvolley': '⚽' };
+const SPORT_ICON = { 'Beach Volleyball': '🏐', 'Footvolley': '⚽', 'Teqball': '🏓' };
 
 const createGameIcon = (game) => L.divIcon({
   className: '',
@@ -28,8 +28,8 @@ function LocationSetter({ position }) {
   return null;
 }
 
-const FORMATS = ['2v2', '3v3', '4v4'];
-const SPORTS_LIST = ['Beach Volleyball', 'Footvolley'];
+const FORMATS = ['1v1', '2v2', '3v3', '4v4'];
+const SPORTS_LIST = ['Beach Volleyball', 'Footvolley', 'Teqball'];
 
 export default function MapHome() {
   const navigate = useNavigate();
@@ -129,7 +129,7 @@ export default function MapHome() {
                 {SPORTS_LIST.map(s => (
                   <button key={s} onClick={() => setFilters(prev => ({ ...prev, sport: prev.sport === s ? '' : s }))}
                     className={`flex-1 py-1.5 rounded-lg text-xs font-medium border transition-all ${filters.sport === s ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-slate-200 text-slate-600'}`}>
-                    {s === 'Beach Volleyball' ? '🏐 Volleyball' : '⚽ Footvolley'}
+                    {s === 'Beach Volleyball' ? '🏐 Volleyball' : s === 'Footvolley' ? '⚽ Footvolley' : '🏓 Teqball'}
                   </button>
                 ))}
               </div>

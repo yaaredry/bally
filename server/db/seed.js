@@ -30,21 +30,34 @@ const ADMIN = {
   avatar: AVATAR_SEEDS[0],
 };
 
-// Tel Aviv beaches, roughly north to south
+// Curated beaches grouped by city, roughly north to south within each city
 const LOCATIONS = [
-  { name: 'North Tsuk Beach (Mandarin)',      lat: 32.1932, lng: 34.7998 },
-  { name: 'South Tsuk Beach (Sea & Sun)',     lat: 32.1856, lng: 34.7968 },
-  { name: 'Mezitzim Beach',                   lat: 32.1000, lng: 34.7628 },
-  { name: 'The Religious Beach',              lat: 32.0965, lng: 34.7623 },
-  { name: 'Hilton Beach',                     lat: 32.0938, lng: 34.7621 },
-  { name: 'Gordon Beach',                     lat: 32.0869, lng: 34.7624 },
-  { name: 'Frischmann Beach',                 lat: 32.0853, lng: 34.7618 },
-  { name: 'Bograshov Beach',                  lat: 32.0817, lng: 34.7613 },
-  { name: 'Jerusalem Beach (Geula)',          lat: 32.0780, lng: 34.7607 },
-  { name: 'Charles Clore Beach',              lat: 32.0748, lng: 34.7597 },
-  { name: 'Aviv Beach',                       lat: 32.0718, lng: 34.7587 },
-  { name: "Ha'Maravi Beach (Manta Ray)",      lat: 32.0682, lng: 34.7572 },
-  { name: 'Tel Baruch Beach',                 lat: 32.1328, lng: 34.7637 },
+  // ── Tel Aviv ────────────────────────────────────────────────────────────────
+  { city: 'Tel Aviv', name: 'North Tsuk Beach (Mandarin)',  lat: 32.1932, lng: 34.7998 },
+  { city: 'Tel Aviv', name: 'South Tsuk Beach (Sea & Sun)', lat: 32.1856, lng: 34.7968 },
+  { city: 'Tel Aviv', name: 'Tel Baruch Beach',             lat: 32.1328, lng: 34.7637 },
+  { city: 'Tel Aviv', name: 'Mezitzim Beach',               lat: 32.1000, lng: 34.7628 },
+  { city: 'Tel Aviv', name: 'The Religious Beach',          lat: 32.0965, lng: 34.7623 },
+  { city: 'Tel Aviv', name: 'Hilton Beach',                 lat: 32.0938, lng: 34.7621 },
+  { city: 'Tel Aviv', name: 'Gordon Beach',                 lat: 32.0869, lng: 34.7624 },
+  { city: 'Tel Aviv', name: 'Frischmann Beach',             lat: 32.0853, lng: 34.7618 },
+  { city: 'Tel Aviv', name: 'Bograshov Beach',              lat: 32.0817, lng: 34.7613 },
+  { city: 'Tel Aviv', name: 'Jerusalem Beach (Geula)',      lat: 32.0780, lng: 34.7607 },
+  { city: 'Tel Aviv', name: 'Charles Clore Beach',          lat: 32.0748, lng: 34.7597 },
+  { city: 'Tel Aviv', name: 'Aviv Beach',                   lat: 32.0718, lng: 34.7587 },
+  { city: 'Tel Aviv', name: "Ha'Maravi Beach (Manta Ray)",  lat: 32.0682, lng: 34.7572 },
+
+  // ── Herzliya ────────────────────────────────────────────────────────────────
+  { city: 'Herzliya', name: 'Acadia Beach',                 lat: 32.1650, lng: 34.7985 },
+  { city: 'Herzliya', name: 'HaSharon Beach',               lat: 32.1590, lng: 34.7962 },
+
+  // ── Haifa ────────────────────────────────────────────────────────────────────
+  // Sources: municipality maps & OpenStreetMap; ordered south to north along Haifa bay
+  { city: 'Haifa', name: "Hof HaCarmel (Dado South)",       lat: 32.7631, lng: 34.9595 },
+  { city: 'Haifa', name: 'Dado Beach',                      lat: 32.7892, lng: 34.9742 },
+  { city: 'Haifa', name: 'Zamir Beach',                     lat: 32.7960, lng: 34.9790 },
+  { city: 'Haifa', name: 'Bat Galim Beach',                 lat: 32.8264, lng: 35.0017 },
+  { city: 'Haifa', name: 'Kiryat Haim Beach',               lat: 32.8372, lng: 35.0751 },
 ];
 
 const FORMATS = ['2v2', '3v3', '4v4'];
@@ -65,8 +78,8 @@ async function seed() {
     // Seed locations
     for (const loc of LOCATIONS) {
       await pool.query(
-        'INSERT INTO locations (name, lat, lng) VALUES ($1,$2,$3)',
-        [loc.name, loc.lat, loc.lng]
+        'INSERT INTO locations (name, city, lat, lng) VALUES ($1,$2,$3,$4)',
+        [loc.name, loc.city, loc.lat, loc.lng]
       );
     }
     console.log(`Inserted ${LOCATIONS.length} locations`);

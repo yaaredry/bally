@@ -356,7 +356,7 @@ router.delete('/games/:id/chat', async (req, res) => {
 
 router.get('/locations', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM locations ORDER BY name');
+    const result = await pool.query('SELECT * FROM locations ORDER BY city, lat DESC');
     res.json({ locations: result.rows });
   } catch (err) {
     console.error(err);
@@ -365,14 +365,14 @@ router.get('/locations', async (req, res) => {
 });
 
 router.post('/locations', async (req, res) => {
-  const { name, lat, lng } = req.body;
-  if (!name || lat == null || lng == null) {
-    return res.status(400).json({ error: 'name, lat, and lng are required' });
+  const { name, city, lat, lng } = req.body;
+  if (!name || !city || lat == null || lng == null) {
+    return res.status(400).json({ error: 'name, city, lat, and lng are required' });
   }
   try {
     const result = await pool.query(
-      'INSERT INTO locations (name, lat, lng) VALUES ($1,$2,$3) RETURNING *',
-      [name, lat, lng]
+      'INSERT INTO locations (name, city, lat, lng) VALUES ($1,$2,$3,$4) RETURNING *',
+      [name, city, lat, lng]
     );
     res.status(201).json({ location: result.rows[0] });
   } catch (err) {
@@ -383,15 +383,16 @@ router.post('/locations', async (req, res) => {
 });
 
 router.put('/locations/:id', async (req, res) => {
-  const { name, lat, lng } = req.body;
+  const { name, city, lat, lng } = req.body;
   try {
     const result = await pool.query(
       `UPDATE locations SET
          name = COALESCE($1, name),
-         lat  = COALESCE($2, lat),
-         lng  = COALESCE($3, lng)
-       WHERE id = $4 RETURNING *`,
-      [name, lat, lng, req.params.id]
+         city = COALESCE($2, city),
+         lat  = COALESCE($3, lat),
+         lng  = COALESCE($4, lng)
+       WHERE id = $5 RETURNING *`,
+      [name, city, lat, lng, req.params.id]
     );
     if (!result.rows.length) return res.status(404).json({ error: 'Location not found' });
     res.json({ location: result.rows[0] });

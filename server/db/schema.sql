@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS games (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   host_id       UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  sport         VARCHAR(50) NOT NULL CHECK (sport IN ('Beach Volleyball', 'Footvolley')),
+  sport         VARCHAR(50) NOT NULL CHECK (sport IN ('Beach Volleyball', 'Footvolley', 'Teqball')),
   format        VARCHAR(20) NOT NULL,
   skill_level   VARCHAR(30) NOT NULL,
   game_date     TIMESTAMPTZ NOT NULL,
@@ -65,10 +65,11 @@ CREATE TABLE IF NOT EXISTS chat_messages (
 
 CREATE INDEX IF NOT EXISTS idx_chat_game ON chat_messages(game_id, created_at);
 
--- Curated locations (admin-managed; users pick from dropdown or enter custom)
+-- Curated locations (admin-managed; users pick from dropdown filtered by city)
 CREATE TABLE IF NOT EXISTS locations (
   id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name       VARCHAR(255) UNIQUE NOT NULL,
+  city       VARCHAR(100) NOT NULL DEFAULT 'Tel Aviv',
   lat        DECIMAL(9,6) NOT NULL,
   lng        DECIMAL(9,6) NOT NULL,
   is_active  BOOLEAN DEFAULT TRUE,

@@ -9,7 +9,8 @@ import SkillBadge from '../components/SkillBadge';
 
 import { SKILL_LEVELS_BY_SPORT } from '../lib/skillLevels';
 
-const SPORTS = ['Beach Volleyball', 'Footvolley'];
+const SPORTS = ['Beach Volleyball', 'Footvolley', 'Teqball'];
+const SPORT_LABEL = { 'Beach Volleyball': '🏐 Volleyball', 'Footvolley': '⚽ Footvolley', 'Teqball': '🏓 Teqball' };
 
 export default function Profile() {
   const { user, logout, updateUser } = useAuth();
@@ -127,7 +128,7 @@ export default function Profile() {
                     className={`flex-1 py-2 rounded-xl border-2 text-xs font-medium transition-all ${
                       form.sports.includes(sport) ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-slate-200 text-slate-600'
                     }`}>
-                    {sport === 'Beach Volleyball' ? '🏐 Volleyball' : '⚽ Footvolley'}
+                    {SPORT_LABEL[sport]}
                   </button>
                 ))}
               </div>
@@ -162,7 +163,7 @@ export default function Profile() {
             <div className="flex items-center gap-2 flex-wrap">
               {(user.sports || []).map(s => (
                 <span key={s} className="bg-brand-50 text-brand-700 text-sm px-3 py-1 rounded-full font-medium">
-                  {s === 'Beach Volleyball' ? '🏐' : '⚽'} {s}
+                  {SPORT_LABEL[s] || s}
                 </span>
               ))}
               {!user.sports?.length && <span className="text-slate-400 text-sm">No sport set</span>}
