@@ -26,7 +26,7 @@ describe('Login page', () => {
 
   test('renders link to sign up page', () => {
     renderLogin();
-    expect(screen.getByRole('link', { name: /sign up/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /create an account/i })).toBeInTheDocument();
   });
 
   test('shows loading state while submitting', async () => {
