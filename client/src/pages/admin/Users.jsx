@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, UserX, UserCheck, ChevronRight, ChevronsUpDown, ChevronUp, ChevronDown } from 'lucide-react';
 import api from '../../api/client';
+import SportIcon from '../../components/SportIcon';
 
 function Th({ label, col, sort, onSort, align = 'left' }) {
   const active = sort.key === col;
@@ -122,7 +123,7 @@ export default function Users() {
                     <div className="text-xs text-slate-400">{u.email}</div>
                   </td>
                   <td className="px-4 py-3 text-slate-600">
-                    {(u.sports || []).map(s => s === 'Beach Volleyball' ? '🏐' : '⚽').join(' ')}
+                    {(u.sports || []).map(s => <SportIcon key={s} sport={s} size={18} className="mr-1" />)}
                   </td>
                   <td className="px-4 py-3">
                     <span className="bg-slate-100 text-slate-700 text-xs px-2 py-0.5 rounded-full font-medium">
