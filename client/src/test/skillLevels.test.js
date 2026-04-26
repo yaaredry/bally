@@ -15,12 +15,12 @@ describe('SKILL_LEVELS_BY_SPORT', () => {
 
   test('Footvolley has 6 levels ending with League', () => {
     const levels = SKILL_LEVELS_BY_SPORT['Footvolley'];
-    expect(levels[0]).toBe('E');
+    expect(levels[0]).toBe('A');
     expect(levels[levels.length - 1]).toBe('League');
   });
 
-  test('Teqball has 7 levels', () => {
-    expect(SKILL_LEVELS_BY_SPORT['Teqball']).toHaveLength(7);
+  test('Teqball has 6 levels', () => {
+    expect(SKILL_LEVELS_BY_SPORT['Teqball']).toHaveLength(6);
   });
 });
 
@@ -70,20 +70,20 @@ describe('getSkillLevelsForSports', () => {
 
   test('returns Footvolley levels for Footvolley only', () => {
     const levels = getSkillLevelsForSports(['Footvolley']);
-    expect(levels).toEqual(['E', 'D', 'C', 'B', 'A', 'League']);
+    expect(levels).toEqual(['A', 'B', 'C', 'D', 'E', 'League']);
   });
 
   test('deduplicates when both sports share level labels', () => {
-    // BV and Teqball both have '1'-'7', so combined should have no duplicates
-    const levels = getSkillLevelsForSports(['Beach Volleyball', 'Teqball']);
+    // Footvolley and Teqball both use A-E + League, so combined should deduplicate to 6
+    const levels = getSkillLevelsForSports(['Footvolley', 'Teqball']);
     const unique = new Set(levels);
     expect(unique.size).toBe(levels.length);
-    expect(levels).toHaveLength(7); // same 7 levels
+    expect(levels).toHaveLength(6);
   });
 
   test('returns combined unique levels for BV + Footvolley', () => {
     const levels = getSkillLevelsForSports(['Beach Volleyball', 'Footvolley']);
-    // BV: 1-7, FV: E,D,C,B,A,League — no overlap, 13 total
+    // BV: 1-7, FV: A,B,C,D,E,League — no overlap, 13 total
     expect(levels).toHaveLength(13);
   });
 

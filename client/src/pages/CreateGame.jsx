@@ -194,7 +194,7 @@ export default function CreateGame() {
         </div>
 
         {/* Date/Time & Duration */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-3">
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-2">Date & Time</label>
             <input

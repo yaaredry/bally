@@ -1,14 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { SKILL_LEVELS_BY_SPORT } from '../lib/skillLevels';
 import AvatarDisplay from '../components/AvatarDisplay';
+import api from '../api/client';
 
 const G_DUSK = 'linear-gradient(160deg, #ffd9a8 0%, #e87a4a 45%, #6b3b6b 100%)';
 const G_CORAL_CTA = 'linear-gradient(180deg, #ee8856 0%, #d85e3a 100%)';
 
-const SPORTS = ['Beach Volleyball', 'Footvolley'];
-const SPORT_LABEL = { 'Beach Volleyball': 'Beach Volley', 'Footvolley': 'Footvolley' };
+const SPORTS = ['Beach Volleyball', 'Footvolley', 'Teqball'];
+const SPORT_LABEL = { 'Beach Volleyball': 'Beach Volley', 'Footvolley': 'Footvolley', 'Teqball': 'Teqball' };
 
 export default function Signup() {
   const { signup } = useAuth();
@@ -25,6 +26,18 @@ export default function Signup() {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [allLocations, setAllLocations] = useState([]);
+  const [selectedCity, setSelectedCity] = useState('');
+
+  useEffect(() => {
+    api.get('/locations').then(res => setAllLocations(res.data.locations)).catch(() => {});
+  }, []);
+
+  const cities = useMemo(() => [...new Set(allLocations.map(l => l.city))].sort(), [allLocations]);
+  const beachesForCity = useMemo(
+    () => selectedCity ? allLocations.filter(l => l.city === selectedCity) : [],
+    [allLocations, selectedCity]
+  );
 
   const set = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
 
@@ -220,15 +233,31 @@ export default function Signup() {
 
             <div style={{ marginBottom: 20 }}>
               <div style={{ fontSize: 12, color: 'rgba(31,26,20,0.55)', fontWeight: 500, marginBottom: 8 }}>HOME BEACH (optional)</div>
-              <FieldShell label="">
-                <input
-                  type="text"
+              <select
+                value={selectedCity}
+                onChange={e => {
+                  setSelectedCity(e.target.value);
+                  set('home_beach', '');
+                }}
+                style={{ ...selectStyle, marginBottom: 8 }}
+              >
+                <option value="">Select a city…</option>
+                {cities.map(city => (
+                  <option key={city} value={city}>{city}</option>
+                ))}
+              </select>
+              {selectedCity && (
+                <select
                   value={form.home_beach}
                   onChange={e => set('home_beach', e.target.value)}
-                  placeholder="e.g. Gordon Beach"
-                  style={{ ...inputStyle, marginTop: 0 }}
-                />
-              </FieldShell>
+                  style={selectStyle}
+                >
+                  <option value="">Select a beach in {selectedCity}…</option>
+                  {beachesForCity.map(loc => (
+                    <option key={loc.id} value={loc.name}>{loc.name}</option>
+                  ))}
+                </select>
+              )}
             </div>
 
             <div style={{ display: 'flex', gap: 10 }}>
@@ -321,6 +350,13 @@ export default function Signup() {
 const inputStyle = {
   width: '100%', background: 'none', border: 'none', outline: 'none',
   fontSize: 15, color: '#1f1a14', letterSpacing: -0.1, marginTop: 2,
+};
+
+const selectStyle = {
+  width: '100%', background: '#f6f1e8', border: 'none', outline: 'none',
+  borderRadius: 14, padding: '12px 14px',
+  fontSize: 15, color: '#1f1a14', letterSpacing: -0.1, appearance: 'none',
+  WebkitAppearance: 'none',
 };
 
 const backBtnStyle = {
