@@ -100,7 +100,7 @@ export default function HostDashboard() {
               <p className="text-sm text-slate-500 mt-1">{format(new Date(game.game_date), 'EEEE, MMMM d · h:mm a')}</p>
             </div>
             <div className="text-right">
-              <div className="text-xl font-bold text-brand-600">{approved.length}/{game.max_players}</div>
+              <div className="text-xl font-bold text-coral">{approved.length}/{game.max_players}</div>
               <div className="text-xs text-slate-500">players</div>
             </div>
           </div>

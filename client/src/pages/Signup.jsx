@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import AvatarPicker from '../components/AvatarPicker';
-import { AVATAR_SEEDS } from '../lib/avatars';
 import { SKILL_LEVELS_BY_SPORT } from '../lib/skillLevels';
-import SportIcon from '../components/SportIcon';
+import AvatarDisplay from '../components/AvatarDisplay';
 
-const SPORTS = ['Beach Volleyball', 'Footvolley', 'Teqball'];
-const SPORT_LABEL = { 'Beach Volleyball': 'Volleyball', 'Footvolley': 'Footvolley', 'Teqball': 'Teqball' };
+const G_DUSK = 'linear-gradient(160deg, #ffd9a8 0%, #e87a4a 45%, #6b3b6b 100%)';
+const G_CORAL_CTA = 'linear-gradient(180deg, #ee8856 0%, #d85e3a 100%)';
+
+const SPORTS = ['Beach Volleyball', 'Footvolley'];
+const SPORT_LABEL = { 'Beach Volleyball': 'Beach Volley', 'Footvolley': 'Footvolley' };
 
 export default function Signup() {
   const { signup } = useAuth();
@@ -21,7 +22,6 @@ export default function Signup() {
     home_beach: '',
     sports: [],
     skill_level: '',
-    avatar_seed: AVATAR_SEEDS[0],
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -33,10 +33,9 @@ export default function Signup() {
       ? form.sports.filter(s => s !== sport)
       : [...form.sports, sport];
     set('sports', next);
-    set('skill_level', ''); // reset level when sports change
+    set('skill_level', '');
   };
 
-  // Which sports to show skill level sections for
   const selectedSports = SPORTS.filter(s => form.sports.includes(s));
 
   const handleSubmit = async (e) => {
@@ -55,164 +54,286 @@ export default function Signup() {
     }
   };
 
+  const step1Valid = form.display_name.trim() && form.email.trim() && form.password.length >= 6;
+  const step2Valid = form.sports.length > 0 && form.skill_level;
+
   return (
-    <div className="min-h-full flex flex-col items-center justify-center p-6 bg-gradient-to-b from-brand-500 to-brand-700">
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-6">
-          <div className="text-5xl mb-2">🏐</div>
-          <h1 className="text-2xl font-bold text-white">Join Bally</h1>
+    <div style={{ minHeight: '100%', background: '#fbf7ef', overflowX: 'hidden' }}>
+      {/* Hero */}
+      <div style={{ position: 'relative', height: 220, background: G_DUSK, flexShrink: 0 }}>
+        <div style={{
+          position: 'absolute', top: 48, left: '50%', transform: 'translateX(-50%)',
+          width: 72, height: 72, borderRadius: 36,
+          background: 'radial-gradient(circle at 35% 30%, #fff5d8, #f5d99b 60%, #f5b765)',
+          boxShadow: '0 0 80px rgba(255,220,150,0.55)',
+        }} />
+        <div style={{ position: 'absolute', bottom: 28, left: 0, right: 0, textAlign: 'center', color: '#fff' }}>
+          <div style={{ fontSize: 40, lineHeight: 1, letterSpacing: -2, fontWeight: 700 }}>Bally</div>
+          <div style={{ fontSize: 12, opacity: 0.8, marginTop: 4, fontWeight: 500 }}>Beach volley · Footvolley</div>
+        </div>
+      </div>
+
+      {/* Card */}
+      <div style={{
+        margin: '-24px 16px 32px',
+        background: 'linear-gradient(180deg, #ffffff 0%, #fbf6eb 100%)',
+        borderRadius: 28,
+        padding: '24px 20px',
+        boxShadow: '0 20px 60px rgba(31,26,20,0.16), 0 4px 12px rgba(31,26,20,0.06)',
+        border: '1px solid rgba(31,26,20,0.08)',
+      }}>
+        {/* Step dots */}
+        <div style={{ display: 'flex', gap: 6, marginBottom: 20 }}>
+          {[1, 2, 3].map(s => (
+            <div key={s} style={{
+              flex: 1, height: 3, borderRadius: 2,
+              background: s <= step ? '#e87a4a' : 'rgba(31,26,20,0.12)',
+              transition: 'background 0.2s',
+            }} />
+          ))}
         </div>
 
-        <div className="bg-white rounded-3xl p-6 shadow-xl">
-          {/* Step indicator */}
-          <div className="flex gap-1.5 mb-5">
-            {[1, 2, 3].map(s => (
-              <div key={s} className={`h-1 flex-1 rounded-full transition-colors ${s <= step ? 'bg-brand-500' : 'bg-slate-200'}`} />
-            ))}
+        {error && (
+          <div style={{ background: '#fbe2d2', color: '#c8425a', fontSize: 13, borderRadius: 12, padding: '10px 14px', marginBottom: 16 }}>
+            {error}
           </div>
+        )}
 
-          {error && (
-            <div className="bg-red-50 text-red-600 text-sm rounded-xl p-3 mb-4">{error}</div>
-          )}
-
-          {step === 1 && (
-            <div className="space-y-4">
-              <h2 className="text-lg font-bold text-slate-800">Account details</h2>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Display name</label>
-                <input
-                  type="text"
-                  value={form.display_name}
-                  onChange={e => set('display_name', e.target.value)}
-                  placeholder="How should we call you?"
-                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-400"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
-                <input
-                  type="email"
-                  value={form.email}
-                  onChange={e => set('email', e.target.value)}
-                  placeholder="you@example.com"
-                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-400"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
-                <input
-                  type="password"
-                  value={form.password}
-                  onChange={e => set('password', e.target.value)}
-                  placeholder="At least 6 characters"
-                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-400"
-                />
-              </div>
-              <button
-                type="button"
-                disabled={!form.display_name || !form.email || form.password.length < 6}
-                onClick={() => setStep(2)}
-                className="w-full bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors"
-              >
-                Next
-              </button>
+        {/* Step 1 — Account */}
+        {step === 1 && (
+          <div>
+            <div style={{ fontSize: 20, fontWeight: 600, color: '#1f1a14', letterSpacing: -0.5, marginBottom: 18 }}>
+              Create your account
             </div>
-          )}
+            <FieldShell label="Display name">
+              <input
+                type="text"
+                value={form.display_name}
+                onChange={e => set('display_name', e.target.value)}
+                placeholder="How should we call you?"
+                style={inputStyle}
+              />
+            </FieldShell>
+            <div style={{ height: 10 }} />
+            <FieldShell label="Email">
+              <input
+                type="email"
+                value={form.email}
+                onChange={e => set('email', e.target.value)}
+                placeholder="you@example.com"
+                style={inputStyle}
+              />
+            </FieldShell>
+            <div style={{ height: 10 }} />
+            <FieldShell label="Password">
+              <input
+                type="password"
+                value={form.password}
+                onChange={e => set('password', e.target.value)}
+                placeholder="At least 6 characters"
+                style={inputStyle}
+              />
+            </FieldShell>
+            <button
+              type="button"
+              disabled={!step1Valid}
+              onClick={() => setStep(2)}
+              style={{
+                marginTop: 18, width: '100%', padding: '15px 0',
+                background: step1Valid ? G_CORAL_CTA : 'rgba(31,26,20,0.12)',
+                borderRadius: 14, border: 'none', cursor: step1Valid ? 'pointer' : 'not-allowed',
+                color: step1Valid ? '#fff' : 'rgba(31,26,20,0.35)',
+                fontWeight: 600, fontSize: 15, letterSpacing: -0.1,
+                boxShadow: step1Valid ? '0 8px 22px rgba(216,89,59,0.32)' : 'none',
+                transition: 'all 0.15s',
+              }}
+            >
+              Next
+            </button>
+            <div style={{ marginTop: 14, textAlign: 'center', fontSize: 13, color: 'rgba(31,26,20,0.55)' }}>
+              Already have an account?{' '}
+              <Link to="/login" style={{ color: '#e87a4a', fontWeight: 600, textDecoration: 'none' }}>Log in</Link>
+            </div>
+          </div>
+        )}
 
-          {step === 2 && (
-            <div className="space-y-4">
-              <h2 className="text-lg font-bold text-slate-800">Your game</h2>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Sport(s)</label>
-                <div className="flex gap-2">
-                  {SPORTS.map(sport => (
-                    <button
-                      key={sport}
-                      type="button"
-                      onClick={() => toggleSport(sport)}
-                      className={`flex-1 py-2.5 rounded-xl border-2 text-sm font-medium transition-all ${
-                        form.sports.includes(sport)
-                          ? 'border-brand-500 bg-brand-50 text-brand-700'
-                          : 'border-slate-200 text-slate-600 hover:border-slate-300'
-                      }`}
-                    >
-                      <span className="inline-flex items-center gap-1"><SportIcon sport={sport} size={14} />{SPORT_LABEL[sport]}</span>
-                    </button>
-                  ))}
+        {/* Step 2 — Sport + Skill */}
+        {step === 2 && (
+          <div>
+            <div style={{ fontSize: 20, fontWeight: 600, color: '#1f1a14', letterSpacing: -0.5, marginBottom: 18 }}>
+              Your game
+            </div>
+
+            <div style={{ fontSize: 12, color: 'rgba(31,26,20,0.55)', fontWeight: 500, marginBottom: 8 }}>SPORT</div>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+              {SPORTS.map(sport => {
+                const active = form.sports.includes(sport);
+                return (
+                  <button
+                    key={sport}
+                    type="button"
+                    onClick={() => toggleSport(sport)}
+                    style={{
+                      flex: 1, padding: '12px 8px', borderRadius: 14, border: 'none', cursor: 'pointer',
+                      background: active ? 'rgba(232,122,74,0.12)' : '#f6f1e8',
+                      color: active ? '#c8425a' : 'rgba(31,26,20,0.70)',
+                      fontWeight: 600, fontSize: 14, letterSpacing: -0.1,
+                      outline: active ? '1.5px solid rgba(232,122,74,0.5)' : 'none',
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    {SPORT_LABEL[sport]}
+                  </button>
+                );
+              })}
+            </div>
+
+            {selectedSports.map(sport => (
+              <div key={sport} style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 12, color: 'rgba(31,26,20,0.55)', fontWeight: 500, marginBottom: 8 }}>
+                  {selectedSports.length > 1 ? `SKILL LEVEL — ${sport.toUpperCase()}` : 'SKILL LEVEL'}
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {SKILL_LEVELS_BY_SPORT[sport].map(lvl => {
+                    const active = form.skill_level === lvl;
+                    return (
+                      <button
+                        key={lvl}
+                        type="button"
+                        onClick={() => set('skill_level', lvl)}
+                        style={{
+                          padding: '8px 14px', borderRadius: 20, border: 'none', cursor: 'pointer',
+                          background: active ? 'rgba(232,122,74,0.12)' : '#f6f1e8',
+                          color: active ? '#c8425a' : 'rgba(31,26,20,0.70)',
+                          fontWeight: 600, fontSize: 14,
+                          outline: active ? '1.5px solid rgba(232,122,74,0.5)' : 'none',
+                          transition: 'all 0.15s',
+                        }}
+                      >
+                        {lvl}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
-              {selectedSports.length > 0 && (
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Your skill level</label>
-                  {selectedSports.map(sport => (
-                    <div key={sport} className="mb-3">
-                      {selectedSports.length > 1 && (
-                        <p className="text-xs text-slate-400 mb-1.5">
-                          {sport === 'Beach Volleyball' ? '🏐 Beach Volleyball' : '⚽ Footvolley'}
-                        </p>
-                      )}
-                      <div className="flex flex-wrap gap-2">
-                        {SKILL_LEVELS_BY_SPORT[sport].map(lvl => (
-                          <button
-                            key={lvl}
-                            type="button"
-                            onClick={() => set('skill_level', lvl)}
-                            className={`py-2 px-3 rounded-xl border-2 text-sm font-medium transition-all ${
-                              form.skill_level === lvl
-                                ? 'border-brand-500 bg-brand-50 text-brand-700'
-                                : 'border-slate-200 text-slate-600 hover:border-slate-300'
-                            }`}
-                          >
-                            {lvl}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Home beach (optional)</label>
+            ))}
+
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 12, color: 'rgba(31,26,20,0.55)', fontWeight: 500, marginBottom: 8 }}>HOME BEACH (optional)</div>
+              <FieldShell label="">
                 <input
                   type="text"
                   value={form.home_beach}
                   onChange={e => set('home_beach', e.target.value)}
                   placeholder="e.g. Gordon Beach"
-                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-400"
+                  style={{ ...inputStyle, marginTop: 0 }}
                 />
-              </div>
-              <div className="flex gap-2">
-                <button type="button" onClick={() => setStep(1)} className="flex-1 py-3 rounded-xl border-2 border-slate-200 text-slate-600 font-semibold">Back</button>
-                <button type="button" onClick={() => setStep(3)} className="flex-1 py-3 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-semibold">Next</button>
+              </FieldShell>
+            </div>
+
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                type="button"
+                onClick={() => setStep(1)}
+                style={backBtnStyle}
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                disabled={!step2Valid}
+                onClick={() => setStep(3)}
+                style={{
+                  flex: 2, padding: '15px 0', borderRadius: 14, border: 'none',
+                  cursor: step2Valid ? 'pointer' : 'not-allowed',
+                  background: step2Valid ? G_CORAL_CTA : 'rgba(31,26,20,0.12)',
+                  color: step2Valid ? '#fff' : 'rgba(31,26,20,0.35)',
+                  fontWeight: 600, fontSize: 15, letterSpacing: -0.1,
+                  boxShadow: step2Valid ? '0 8px 22px rgba(216,89,59,0.32)' : 'none',
+                  transition: 'all 0.15s',
+                }}
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 3 — Confirm */}
+        {step === 3 && (
+          <form onSubmit={handleSubmit}>
+            <div style={{ fontSize: 20, fontWeight: 600, color: '#1f1a14', letterSpacing: -0.5, marginBottom: 18 }}>
+              Looking good
+            </div>
+
+            {/* Preview card */}
+            <div style={{
+              background: '#f6f1e8', borderRadius: 18, padding: '18px 16px',
+              display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20,
+            }}>
+              <AvatarDisplay name={form.display_name} size="lg" />
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 16, color: '#1f1a14', letterSpacing: -0.3 }}>
+                  {form.display_name}
+                </div>
+                <div style={{ fontSize: 13, color: 'rgba(31,26,20,0.55)', marginTop: 2 }}>
+                  {form.sports.join(' · ')}
+                </div>
+                {form.skill_level && (
+                  <div style={{ fontSize: 13, color: 'rgba(31,26,20,0.55)', marginTop: 1 }}>
+                    Level {form.skill_level}
+                  </div>
+                )}
               </div>
             </div>
-          )}
 
-          {step === 3 && (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <h2 className="text-lg font-bold text-slate-800">Pick your avatar</h2>
-              <AvatarPicker selected={form.avatar_seed} onSelect={seed => set('avatar_seed', seed)} />
-              <div className="flex gap-2">
-                <button type="button" onClick={() => setStep(2)} className="flex-1 py-3 rounded-xl border-2 border-slate-200 text-slate-600 font-semibold">Back</button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="flex-1 py-3 rounded-xl bg-accent-500 hover:bg-accent-600 disabled:opacity-60 text-white font-semibold transition-colors"
-                >
-                  {loading ? 'Creating…' : "Let's play!"}
-                </button>
-              </div>
-            </form>
-          )}
-
-          {step === 1 && (
-            <p className="text-center text-sm text-slate-500 mt-4">
-              Already have an account?{' '}
-              <Link to="/login" className="text-brand-600 font-semibold hover:underline">Log in</Link>
-            </p>
-          )}
-        </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                type="button"
+                onClick={() => setStep(2)}
+                style={backBtnStyle}
+              >
+                Back
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                style={{
+                  flex: 2, padding: '15px 0', borderRadius: 14, border: 'none',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  background: loading ? 'rgba(31,26,20,0.12)' : G_CORAL_CTA,
+                  color: loading ? 'rgba(31,26,20,0.35)' : '#fff',
+                  fontWeight: 600, fontSize: 15, letterSpacing: -0.1,
+                  boxShadow: loading ? 'none' : '0 8px 22px rgba(216,89,59,0.32)',
+                  transition: 'all 0.15s',
+                }}
+              >
+                {loading ? 'Creating account…' : "Let's play!"}
+              </button>
+            </div>
+          </form>
+        )}
       </div>
+    </div>
+  );
+}
+
+const inputStyle = {
+  width: '100%', background: 'none', border: 'none', outline: 'none',
+  fontSize: 15, color: '#1f1a14', letterSpacing: -0.1, marginTop: 2,
+};
+
+const backBtnStyle = {
+  flex: 1, padding: '15px 0', borderRadius: 14, border: 'none', cursor: 'pointer',
+  background: 'rgba(31,26,20,0.08)', color: 'rgba(31,26,20,0.70)',
+  fontWeight: 600, fontSize: 15, letterSpacing: -0.1,
+};
+
+function FieldShell({ label, children }) {
+  return (
+    <div style={{ background: '#f6f1e8', borderRadius: 14, padding: '10px 14px' }}>
+      {label && <div style={{ fontSize: 11, color: 'rgba(31,26,20,0.55)', fontWeight: 500 }}>{label}</div>}
+      {children}
     </div>
   );
 }

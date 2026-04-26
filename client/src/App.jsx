@@ -11,6 +11,7 @@ import CreateGame from './pages/CreateGame';
 import Profile from './pages/Profile';
 import MyGames from './pages/MyGames';
 import HostDashboard from './pages/HostDashboard';
+import Chats from './pages/Chats';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminLayout from './pages/admin/AdminLayout';
 import Dashboard from './pages/admin/Dashboard';
@@ -34,10 +35,9 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full bg-brand-50">
+      <div className="flex items-center justify-center h-full" style={{ background: '#fbf7ef' }}>
         <div className="text-center">
-          <div className="text-4xl mb-2">🏐</div>
-          <p className="text-brand-600 font-semibold">Bally</p>
+          <div style={{ fontSize: 48, fontWeight: 700, letterSpacing: -2, color: '#1f1a14' }}>Bally</div>
         </div>
       </div>
     );
@@ -57,6 +57,7 @@ export default function App() {
             <Route path="/my-games" element={<MyGames />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/host/:gameId" element={<HostDashboard />} />
+            <Route path="/chats" element={<Chats />} />
           </Route>
         </Route>
 

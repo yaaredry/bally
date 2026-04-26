@@ -88,14 +88,14 @@ export default function MapHome() {
             onClick={() => setShowFilters(!showFilters)}
             className={`flex items-center gap-1.5 px-3 py-2 rounded-xl shadow text-sm font-medium transition-colors ${
               activeFiltersCount > 0
-                ? 'bg-brand-500 text-white'
-                : 'bg-white text-slate-700'
+                ? 'bg-coral text-white'
+                : 'bg-white text-ink-70'
             }`}
           >
             <SlidersHorizontal size={15} />
             Filters
             {activeFiltersCount > 0 && (
-              <span className="bg-white text-brand-600 text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+              <span className="bg-white text-coral-deep text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
                 {activeFiltersCount}
               </span>
             )}
@@ -116,13 +116,13 @@ export default function MapHome() {
           <div className="ml-auto flex bg-white rounded-xl shadow overflow-hidden">
             <button
               onClick={() => setView('map')}
-              className={`flex items-center gap-1 px-3 py-2 text-sm transition-colors ${view === 'map' ? 'bg-brand-500 text-white' : 'text-slate-600'}`}
+              className={`flex items-center gap-1 px-3 py-2 text-sm transition-colors ${view === 'map' ? 'bg-coral text-white' : 'text-ink-55'}`}
             >
               <MapIcon size={15} />
             </button>
             <button
               onClick={() => setView('list')}
-              className={`flex items-center gap-1 px-3 py-2 text-sm transition-colors ${view === 'list' ? 'bg-brand-500 text-white' : 'text-slate-600'}`}
+              className={`flex items-center gap-1 px-3 py-2 text-sm transition-colors ${view === 'list' ? 'bg-coral text-white' : 'text-ink-55'}`}
             >
               <List size={15} />
             </button>
@@ -137,7 +137,7 @@ export default function MapHome() {
               <div className="flex gap-2">
                 {SPORTS_LIST.map(s => (
                   <button key={s} onClick={() => setFilters(prev => ({ ...prev, sport: prev.sport === s ? '' : s }))}
-                    className={`flex-1 py-1.5 rounded-lg text-xs font-medium border transition-all ${filters.sport === s ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-slate-200 text-slate-600'}`}>
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-medium border transition-all ${filters.sport === s ? 'border-coral bg-coral-soft text-coral-deep' : 'border-slate-200 text-slate-600'}`}>
                     <span className="inline-flex items-center gap-1"><SportIcon sport={s} size={14} />{s === 'Beach Volleyball' ? 'Volleyball' : s}</span>
                   </button>
                 ))}
@@ -149,7 +149,7 @@ export default function MapHome() {
                 <div className="flex gap-1.5 flex-wrap">
                   {[...( SKILL_LEVELS_BY_SPORT[filters.sport] || []), 'All welcome'].map(s => (
                     <button key={s} onClick={() => setFilters(prev => ({ ...prev, skill_level: prev.skill_level === s ? '' : s }))}
-                      className={`py-1 px-2.5 rounded-lg text-xs font-medium border transition-all ${filters.skill_level === s ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-slate-200 text-slate-600'}`}>
+                      className={`py-1 px-2.5 rounded-lg text-xs font-medium border transition-all ${filters.skill_level === s ? 'border-coral bg-coral-soft text-coral-deep' : 'border-slate-200 text-slate-600'}`}>
                       {s}
                     </button>
                   ))}
@@ -163,7 +163,7 @@ export default function MapHome() {
               <div className="flex gap-1.5">
                 {FORMATS.map(f => (
                   <button key={f} onClick={() => setFilters(prev => ({ ...prev, format: prev.format === f ? '' : f }))}
-                    className={`py-1 px-3 rounded-lg text-xs font-medium border transition-all ${filters.format === f ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-slate-200 text-slate-600'}`}>
+                    className={`py-1 px-3 rounded-lg text-xs font-medium border transition-all ${filters.format === f ? 'border-coral bg-coral-soft text-coral-deep' : 'border-slate-200 text-slate-600'}`}>
                     {f}
                   </button>
                 ))}
@@ -197,7 +197,7 @@ export default function MapHome() {
                     <div className="text-slate-500 text-xs">{game.slots_remaining ?? game.max_players} slots left</div>
                     <button
                       onClick={() => navigate(`/games/${game.id}`)}
-                      className="mt-2 w-full bg-brand-500 text-white text-xs font-semibold py-1.5 rounded-lg"
+                      style={{ marginTop: 8, width: '100%', background: 'linear-gradient(180deg,#ee8856 0%,#d85e3a 100%)', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 0', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
                     >
                       View game
                     </button>
@@ -208,7 +208,7 @@ export default function MapHome() {
           </MapContainer>
 
           {/* Game count badge */}
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white rounded-full px-4 py-2 shadow text-sm font-medium text-slate-700 z-10">
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white rounded-full px-4 py-2 shadow text-sm font-medium text-ink-70 z-10">
             {loading ? 'Loading…' : `${games.length} game${games.length !== 1 ? 's' : ''} nearby`}
           </div>
         </div>
@@ -220,8 +220,7 @@ export default function MapHome() {
           {loading ? (
             <div className="text-center text-slate-400 py-10">Loading games…</div>
           ) : games.length === 0 ? (
-            <div className="text-center py-12 text-slate-400">
-              <div className="text-4xl mb-2">🏖️</div>
+            <div className="text-center py-12 text-ink-35">
               <p>No games found nearby. Create one!</p>
             </div>
           ) : (
