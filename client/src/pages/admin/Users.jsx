@@ -1,7 +1,23 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, UserX, UserCheck, KeyRound, ChevronRight } from 'lucide-react';
+import { Search, UserX, UserCheck, ChevronRight, ChevronsUpDown, ChevronUp, ChevronDown } from 'lucide-react';
 import api from '../../api/client';
+
+function Th({ label, col, sort, onSort, align = 'left' }) {
+  const active = sort.key === col;
+  const Icon = active ? (sort.dir === 'asc' ? ChevronUp : ChevronDown) : ChevronsUpDown;
+  return (
+    <th
+      onClick={() => onSort(col)}
+      className={`px-4 py-3 text-${align} text-xs text-slate-500 uppercase tracking-wide cursor-pointer select-none hover:text-slate-700 group`}
+    >
+      <span className="inline-flex items-center gap-1">
+        {label}
+        <Icon size={12} className={active ? 'text-brand-500' : 'text-slate-300 group-hover:text-slate-400'} />
+      </span>
+    </th>
+  );
+}
 
 export default function Users() {
   const navigate = useNavigate();
@@ -10,6 +26,12 @@ export default function Users() {
   const [search, setSearch] = useState('');
   const [filterSport, setFilterSport] = useState('');
   const [filterActive, setFilterActive] = useState('');
+  const [sort, setSort] = useState({ key: 'display_name', dir: 'asc' });
+
+  const toggleSort = (key) => setSort(prev => ({
+    key,
+    dir: prev.key === key && prev.dir === 'asc' ? 'desc' : 'asc',
+  }));
 
   const fetchUsers = () => {
     const params = new URLSearchParams();
@@ -24,6 +46,13 @@ export default function Users() {
   };
 
   useEffect(() => { fetchUsers(); }, [search, filterSport, filterActive]);
+
+  const sorted = [...users].sort((a, b) => {
+    const val = x => x[sort.key] ?? '';
+    const av = val(a), bv = val(b);
+    const cmp = typeof av === 'number' ? av - bv : String(av).localeCompare(String(bv));
+    return sort.dir === 'asc' ? cmp : -cmp;
+  });
 
   const toggleActive = async (user) => {
     await api.put(`/admin/users/${user.id}`, { is_active: !user.is_active });
@@ -73,20 +102,20 @@ export default function Users() {
           <div className="p-8 text-center text-slate-400">No users found</div>
         ) : (
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 border-b border-slate-100 text-xs text-slate-500 uppercase tracking-wide">
+            <thead className="bg-slate-50 border-b border-slate-100">
               <tr>
-                <th className="text-left px-4 py-3">User</th>
-                <th className="text-left px-4 py-3">Sports</th>
-                <th className="text-left px-4 py-3">Level</th>
-                <th className="text-right px-4 py-3">Hosted</th>
-                <th className="text-right px-4 py-3">Played</th>
-                <th className="text-right px-4 py-3">Rating</th>
-                <th className="text-left px-4 py-3">Status</th>
+                <Th label="User"   col="display_name"  sort={sort} onSort={toggleSort} />
+                <th className="px-4 py-3 text-left text-xs text-slate-500 uppercase tracking-wide">Sports</th>
+                <Th label="Level"  col="skill_level"   sort={sort} onSort={toggleSort} />
+                <Th label="Hosted" col="games_hosted"  sort={sort} onSort={toggleSort} align="right" />
+                <Th label="Played" col="games_played"  sort={sort} onSort={toggleSort} align="right" />
+                <Th label="Rating" col="avg_rating"    sort={sort} onSort={toggleSort} align="right" />
+                <Th label="Status" col="is_active"     sort={sort} onSort={toggleSort} />
                 <th className="px-4 py-3" />
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {users.map(u => (
+              {sorted.map(u => (
                 <tr key={u.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-4 py-3">
                     <div className="font-medium text-slate-800">{u.display_name}</div>

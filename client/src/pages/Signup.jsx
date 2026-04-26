@@ -4,9 +4,10 @@ import { useAuth } from '../context/AuthContext';
 import AvatarPicker from '../components/AvatarPicker';
 import { AVATAR_SEEDS } from '../lib/avatars';
 import { SKILL_LEVELS_BY_SPORT } from '../lib/skillLevels';
+import SportIcon from '../components/SportIcon';
 
 const SPORTS = ['Beach Volleyball', 'Footvolley', 'Teqball'];
-const SPORT_LABEL = { 'Beach Volleyball': '🏐 Volleyball', 'Footvolley': '⚽ Footvolley', 'Teqball': '🏓 Teqball' };
+const SPORT_LABEL = { 'Beach Volleyball': 'Volleyball', 'Footvolley': 'Footvolley', 'Teqball': 'Teqball' };
 
 export default function Signup() {
   const { signup } = useAuth();
@@ -135,7 +136,7 @@ export default function Signup() {
                           : 'border-slate-200 text-slate-600 hover:border-slate-300'
                       }`}
                     >
-                      {SPORT_LABEL[sport]}
+                      <span className="inline-flex items-center gap-1"><SportIcon sport={sport} size={14} />{SPORT_LABEL[sport]}</span>
                     </button>
                   ))}
                 </div>

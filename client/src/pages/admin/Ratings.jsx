@@ -1,11 +1,33 @@
 import { useEffect, useState } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Trash2, ChevronsUpDown, ChevronUp, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
 import api from '../../api/client';
+
+function Th({ label, col, sort, onSort, align = 'left' }) {
+  const active = sort.key === col;
+  const Icon = active ? (sort.dir === 'asc' ? ChevronUp : ChevronDown) : ChevronsUpDown;
+  return (
+    <th
+      onClick={() => onSort(col)}
+      className={`px-4 py-3 text-${align} text-xs text-slate-500 uppercase tracking-wide cursor-pointer select-none hover:text-slate-700 group`}
+    >
+      <span className="inline-flex items-center gap-1">
+        {label}
+        <Icon size={12} className={active ? 'text-brand-500' : 'text-slate-300 group-hover:text-slate-400'} />
+      </span>
+    </th>
+  );
+}
 
 export default function Ratings() {
   const [ratings, setRatings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [sort, setSort] = useState({ key: 'game_date', dir: 'desc' });
+
+  const toggleSort = (key) => setSort(prev => ({
+    key,
+    dir: prev.key === key && prev.dir === 'asc' ? 'desc' : 'asc',
+  }));
 
   const fetchRatings = () => {
     api.get('/admin/ratings')
@@ -15,6 +37,13 @@ export default function Ratings() {
   };
 
   useEffect(() => { fetchRatings(); }, []);
+
+  const sorted = [...ratings].sort((a, b) => {
+    const val = x => x[sort.key] ?? '';
+    const av = val(a), bv = val(b);
+    const cmp = typeof av === 'number' ? av - bv : String(av).localeCompare(String(bv));
+    return sort.dir === 'asc' ? cmp : -cmp;
+  });
 
   const deleteRating = async (id) => {
     if (!window.confirm('Delete this rating?')) return;
@@ -33,18 +62,18 @@ export default function Ratings() {
           <div className="p-8 text-center text-slate-400">No ratings yet</div>
         ) : (
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 border-b border-slate-100 text-xs text-slate-500 uppercase tracking-wide">
+            <thead className="bg-slate-50 border-b border-slate-100">
               <tr>
-                <th className="text-left px-4 py-3">Stars</th>
-                <th className="text-left px-4 py-3">From</th>
-                <th className="text-left px-4 py-3">To</th>
-                <th className="text-left px-4 py-3">Game</th>
-                <th className="text-left px-4 py-3">Date</th>
+                <Th label="Stars" col="stars"      sort={sort} onSort={toggleSort} />
+                <Th label="From"  col="rater_name" sort={sort} onSort={toggleSort} />
+                <Th label="To"    col="rated_name" sort={sort} onSort={toggleSort} />
+                <Th label="Game"  col="sport"      sort={sort} onSort={toggleSort} />
+                <Th label="Date"  col="game_date"  sort={sort} onSort={toggleSort} />
                 <th className="px-4 py-3" />
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {ratings.map(r => (
+              {sorted.map(r => (
                 <tr key={r.id} className="hover:bg-slate-50">
                   <td className="px-4 py-3">
                     <span className="text-yellow-500 font-bold">{'★'.repeat(r.stars)}</span>

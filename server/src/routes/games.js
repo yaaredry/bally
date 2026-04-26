@@ -389,10 +389,14 @@ router.delete('/:id/gear/:item', authenticate, async (req, res) => {
 router.get('/:id/my-ratings', authenticate, async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT rated_id FROM ratings WHERE game_id = $1 AND rater_id = $2',
+      'SELECT rated_id, stars, updated_at FROM ratings WHERE game_id = $1 AND rater_id = $2',
       [req.params.id, req.user.id]
     );
-    res.json({ rated_ids: result.rows.map(r => r.rated_id) });
+    const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    res.json({
+      stars_map:  Object.fromEntries(result.rows.map(r => [r.rated_id, r.stars])),
+      locked_ids: result.rows.filter(r => new Date(r.updated_at).getTime() < cutoff).map(r => r.rated_id),
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
@@ -448,8 +452,21 @@ router.post('/:id/rate', authenticate, async (req, res) => {
       return res.status(400).json({ error: 'Rated player was not part of this game' });
     }
 
+    // If a rating already exists, block the update if it was last changed > 7 days ago
+    const existing = await pool.query(
+      'SELECT updated_at FROM ratings WHERE game_id = $1 AND rater_id = $2 AND rated_id = $3',
+      [req.params.id, req.user.id, rated_id]
+    );
+    if (existing.rows.length) {
+      const daysSinceUpdate = (Date.now() - new Date(existing.rows[0].updated_at).getTime()) / (1000 * 60 * 60 * 24);
+      if (daysSinceUpdate > 7) {
+        return res.status(403).json({ error: 'Rating can no longer be changed (7-day window passed)' });
+      }
+    }
+
     await pool.query(
-      'INSERT INTO ratings (game_id, rater_id, rated_id, stars) VALUES ($1,$2,$3,$4)',
+      `INSERT INTO ratings (game_id, rater_id, rated_id, stars) VALUES ($1,$2,$3,$4)
+       ON CONFLICT (game_id, rater_id, rated_id) DO UPDATE SET stars = EXCLUDED.stars, updated_at = NOW()`,
       [req.params.id, req.user.id, rated_id, stars]
     );
 

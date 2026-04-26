@@ -1,8 +1,24 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, ChevronRight, Ban } from 'lucide-react';
+import { Search, ChevronRight, Ban, ChevronsUpDown, ChevronUp, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
 import api from '../../api/client';
+
+function Th({ label, col, sort, onSort, align = 'left' }) {
+  const active = sort.key === col;
+  const Icon = active ? (sort.dir === 'asc' ? ChevronUp : ChevronDown) : ChevronsUpDown;
+  return (
+    <th
+      onClick={() => onSort(col)}
+      className={`px-4 py-3 text-${align} text-xs text-slate-500 uppercase tracking-wide cursor-pointer select-none hover:text-slate-700 group`}
+    >
+      <span className="inline-flex items-center gap-1">
+        {label}
+        <Icon size={12} className={active ? 'text-brand-500' : 'text-slate-300 group-hover:text-slate-400'} />
+      </span>
+    </th>
+  );
+}
 
 const STATUS_COLORS = {
   open: 'bg-green-100 text-green-700',
@@ -18,6 +34,12 @@ export default function Games() {
   const [search, setSearch] = useState('');
   const [filterSport, setFilterSport] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
+  const [sort, setSort] = useState({ key: 'game_date', dir: 'asc' });
+
+  const toggleSort = (key) => setSort(prev => ({
+    key,
+    dir: prev.key === key && prev.dir === 'asc' ? 'desc' : 'asc',
+  }));
 
   const fetchGames = () => {
     const params = new URLSearchParams();
@@ -32,6 +54,13 @@ export default function Games() {
   };
 
   useEffect(() => { fetchGames(); }, [search, filterSport, filterStatus]);
+
+  const sorted = [...games].sort((a, b) => {
+    const val = x => x[sort.key] ?? '';
+    const av = val(a), bv = val(b);
+    const cmp = typeof av === 'number' ? av - bv : String(av).localeCompare(String(bv));
+    return sort.dir === 'asc' ? cmp : -cmp;
+  });
 
   const cancelGame = async (id) => {
     await api.delete(`/admin/games/${id}`);
@@ -75,19 +104,20 @@ export default function Games() {
           <div className="p-8 text-center text-slate-400">No games found</div>
         ) : (
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 border-b border-slate-100 text-xs text-slate-500 uppercase tracking-wide">
+            <thead className="bg-slate-50 border-b border-slate-100">
               <tr>
-                <th className="text-left px-4 py-3">Game</th>
-                <th className="text-left px-4 py-3">Date</th>
-                <th className="text-left px-4 py-3">Host</th>
-                <th className="text-right px-4 py-3">Players</th>
-                <th className="text-right px-4 py-3">Pending</th>
-                <th className="text-left px-4 py-3">Status</th>
+                <Th label="Game"       col="sport"          sort={sort} onSort={toggleSort} />
+                <Th label="Created At" col="created_at"    sort={sort} onSort={toggleSort} />
+                <Th label="Date"       col="game_date"     sort={sort} onSort={toggleSort} />
+                <Th label="Host"       col="host_name"     sort={sort} onSort={toggleSort} />
+                <Th label="Players"    col="approved_count" sort={sort} onSort={toggleSort} align="right" />
+                <Th label="Pending"    col="pending_count"  sort={sort} onSort={toggleSort} align="right" />
+                <Th label="Status"     col="status"        sort={sort} onSort={toggleSort} />
                 <th className="px-4 py-3" />
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {games.map(g => (
+              {sorted.map(g => (
                 <tr key={g.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-4 py-3">
                     <div className="font-medium text-slate-800">
@@ -95,6 +125,7 @@ export default function Games() {
                     </div>
                     <div className="text-xs text-slate-400">{g.location_name}</div>
                   </td>
+                  <td className="px-4 py-3 text-slate-500 text-xs">{format(new Date(g.created_at), 'MMM d, yyyy')}</td>
                   <td className="px-4 py-3 text-slate-600 text-xs">{format(new Date(g.game_date), 'MMM d, HH:mm')}</td>
                   <td className="px-4 py-3 text-slate-600">{g.host_name}</td>
                   <td className="px-4 py-3 text-right text-slate-600">{g.approved_count}/{g.max_players}</td>

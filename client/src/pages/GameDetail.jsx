@@ -3,16 +3,50 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import { format } from 'date-fns';
 import { io } from 'socket.io-client';
-import { ChevronLeft, Clock, MapPin, Users, Send, Settings, Lock, Share2, Check } from 'lucide-react';
+import { ChevronLeft, Clock, MapPin, Users, Send, Settings, Lock, Share2, Check, LogOut } from 'lucide-react';
 import api from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import AvatarDisplay from '../components/AvatarDisplay';
 import SkillBadge from '../components/SkillBadge';
+import SportIcon from '../components/SportIcon';
 
-const SPORT_ICON = { 'Beach Volleyball': '🏐', 'Footvolley': '⚽', 'Teqball': '🏓' };
+function LeaveConfirmModal({ onConfirm, onCancel, leaving }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm px-4 pb-6">
+      <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden">
+        <div className="flex flex-col items-center px-6 pt-8 pb-4">
+          <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mb-4">
+            <LogOut size={24} className="text-red-500" />
+          </div>
+          <h2 className="text-lg font-bold text-slate-800 mb-1">Leave this game?</h2>
+          <p className="text-sm text-slate-500 text-center">
+            Your spot will be freed up and the team will be notified.
+          </p>
+        </div>
+        <div className="flex gap-3 px-6 pb-6 pt-2">
+          <button
+            onClick={onCancel}
+            className="flex-1 py-3 rounded-2xl border-2 border-slate-200 text-slate-600 font-semibold text-sm"
+          >
+            Stay
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={leaving}
+            className="flex-1 py-3 rounded-2xl bg-red-500 text-white font-semibold text-sm disabled:opacity-60"
+          >
+            {leaving ? 'Leaving…' : 'Leave game'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const SPORT_EMOJI = { 'Beach Volleyball': '🏐', 'Footvolley': '⚽', 'Teqball': '🏓' };
 
 const GEAR_ITEMS = [
-  { id: 'ball',    label: 'Ball',    emoji: '🏐' },
+  { id: 'ball',    label: 'Ball',    emoji: null },
   { id: 'lines',   label: 'Lines',   emoji: '📏' },
   { id: 'speaker', label: 'Speaker', emoji: '🔊' },
   { id: 'hose',    label: 'Hose',    emoji: '💧' },
@@ -26,13 +60,17 @@ export default function GameDetail() {
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [submittedStars, setSubmittedStars] = useState({});
+  const [lockedIds, setLockedIds] = useState(new Set());
+  const [hoverStars, setHoverStars] = useState({});
   const [copied, setCopied] = useState(false);
   const [gear, setGear] = useState([]);
 
   const shareGame = async () => {
     const url = `${window.location.origin}/games/${id}`;
     const shareData = {
-      title: `${SPORT_ICON[game?.sport] || '🏐'} ${game?.sport} · ${game?.format}`,
+      title: `${SPORT_EMOJI[game?.sport] || '🏐'} ${game?.sport} · ${game?.format}`,
       text: `Join my game at ${game?.location_name}!`,
       url,
     };
@@ -55,6 +93,12 @@ export default function GameDetail() {
         setGame(res.data.game);
         setMessages(res.data.game.chat_messages || []);
         setGear(res.data.game.gear || []);
+        if (res.data.game.status === 'completed') {
+          api.get(`/games/${id}/my-ratings`).then(r => {
+            setSubmittedStars(r.data.stars_map || {});
+            setLockedIds(new Set(r.data.locked_ids || []));
+          });
+        }
       })
       .catch(() => navigate('/'))
       .finally(() => setLoading(false));
@@ -90,12 +134,12 @@ export default function GameDetail() {
   };
 
   const handleLeave = async () => {
-    if (!window.confirm('Are you sure you want to leave this game?')) return;
     setLeaving(true);
     try {
       await api.delete(`/games/${id}/leave`);
       setGame(prev => ({ ...prev, my_request_status: null, approved_count: prev.approved_count - 1, slots_remaining: prev.slots_remaining + 1 }));
       setGear(prev => prev.filter(g => g.player_id !== user.id));
+      setShowLeaveModal(false);
     } catch (err) {
       alert(err.response?.data?.error || 'Could not leave game');
     } finally {
@@ -115,6 +159,16 @@ export default function GameDetail() {
       }
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const submitRating = async (ratedId, stars) => {
+    setSubmittedStars(prev => ({ ...prev, [ratedId]: stars }));
+    try {
+      await api.post(`/games/${id}/rate`, { rated_id: ratedId, stars });
+    } catch (err) {
+      setSubmittedStars(prev => ({ ...prev, [ratedId]: prev[ratedId] }));
+      alert(err.response?.data?.error || 'Could not submit rating');
     }
   };
 
@@ -149,13 +203,20 @@ export default function GameDetail() {
 
   return (
     <div className="h-full overflow-y-auto">
+      {showLeaveModal && (
+        <LeaveConfirmModal
+          onConfirm={handleLeave}
+          onCancel={() => setShowLeaveModal(false)}
+          leaving={leaving}
+        />
+      )}
       {/* Back nav */}
       <div className="flex items-center gap-3 p-4 sticky top-0 bg-white border-b border-slate-100 z-10">
         <button onClick={() => navigate(-1)} className="p-1.5 rounded-xl bg-slate-100 text-slate-600">
           <ChevronLeft size={20} />
         </button>
         <h1 className="text-lg font-bold text-slate-800">
-          {SPORT_ICON[game.sport]} {game.sport} · {game.format}
+          <SportIcon sport={game.sport} size={20} className="mr-1" /> {game.sport} · {game.format}
         </h1>
         <div className="ml-auto flex items-center gap-2">
           <button
@@ -177,6 +238,9 @@ export default function GameDetail() {
         {/* Status banners */}
         {isCancelled && (
           <div className="bg-red-50 text-red-600 rounded-xl p-3 text-sm font-medium text-center">Game cancelled</div>
+        )}
+        {game.status === 'completed' && (
+          <div className="bg-green-50 text-green-700 rounded-xl p-3 text-sm font-medium text-center">Game completed</div>
         )}
 
         {/* Info card */}
@@ -261,6 +325,54 @@ export default function GameDetail() {
           </div>
         )}
 
+        {/* Ratings */}
+        {game.status === 'completed' && (game.can_chat || isHost) && (() => {
+          const teammates = [
+            ...(game.roster || []).filter(p => p.id !== user.id),
+            ...(isHost ? [] : [{ id: game.host_id, display_name: game.host_name, avatar_seed: game.host_avatar }]),
+          ];
+          if (!teammates.length) return null;
+          return (
+            <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Rate your teammates</p>
+              <div className="space-y-3">
+                {teammates.map(player => {
+                  const submitted = submittedStars[player.id] || 0;
+                  const locked = lockedIds.has(player.id);
+                  const hover = hoverStars[player.id] || 0;
+                  const active = locked ? submitted : (hover || submitted);
+                  return (
+                    <div key={player.id} className="flex items-center gap-3">
+                      <AvatarDisplay seed={player.avatar_seed} name={player.display_name} size="sm" />
+                      <span className="text-sm font-medium text-slate-700 flex-1">{player.display_name}</span>
+                      <div
+                        className="flex gap-1"
+                        onMouseLeave={() => !locked && setHoverStars(p => ({ ...p, [player.id]: 0 }))}
+                      >
+                        {[1,2,3,4,5].map(star => (
+                          <button
+                            key={star}
+                            disabled={locked}
+                            onClick={() => !locked && submitRating(player.id, star)}
+                            onMouseEnter={() => !locked && setHoverStars(p => ({ ...p, [player.id]: star }))}
+                            className={`text-xl leading-none transition-all ${
+                              locked ? 'cursor-default opacity-60' : 'cursor-pointer hover:scale-110'
+                            } ${star <= active ? 'text-yellow-400' : 'text-slate-200'}`}
+                          >
+                            ★
+                          </button>
+                        ))}
+                      </div>
+                      {locked && <span className="text-xs text-slate-400">Locked</span>}
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-slate-400 mt-3">Ratings are anonymous to other players</p>
+            </div>
+          );
+        })()}
+
         {/* Gear */}
         {(game.can_chat || isHost) && (
           <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
@@ -281,7 +393,9 @@ export default function GameDetail() {
                     }`}
                   >
                     <div className="flex items-center gap-2">
-                      <span className="text-xl">{emoji}</span>
+                      {item === 'ball'
+                        ? <SportIcon sport={game.sport} size={24} />
+                        : <span className="text-xl">{emoji}</span>}
                       <span className={`text-sm font-semibold ${iMBringing ? 'text-brand-700' : 'text-slate-700'}`}>
                         {label}
                       </span>
@@ -334,11 +448,10 @@ export default function GameDetail() {
             </button>
             {game.my_request_status === 'approved' && !isPast && !isCancelled && game.status !== 'completed' && (
               <button
-                onClick={handleLeave}
-                disabled={leaving}
+                onClick={() => setShowLeaveModal(true)}
                 className="w-full py-3 rounded-2xl font-semibold text-sm border-2 border-red-100 text-red-500 hover:bg-red-50 transition-colors"
               >
-                {leaving ? 'Leaving…' : 'Leave game'}
+                Leave game
               </button>
             )}
           </div>

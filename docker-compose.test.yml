@@ -1,0 +1,14 @@
+services:
+  test-db:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_DB: bally_test
+      POSTGRES_USER: bally
+      POSTGRES_PASSWORD: bally_dev
+    ports:
+      - "5435:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bally -d bally_test"]
+      interval: 3s
+      timeout: 5s
+      retries: 10

@@ -85,6 +85,7 @@ CREATE TABLE IF NOT EXISTS ratings (
   rated_id   UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   stars      SMALLINT NOT NULL CHECK (stars BETWEEN 1 AND 5),
   created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(game_id, rater_id, rated_id)
 );
 

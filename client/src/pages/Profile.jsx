@@ -6,11 +6,12 @@ import api from '../api/client';
 import AvatarDisplay from '../components/AvatarDisplay';
 import AvatarPicker from '../components/AvatarPicker';
 import SkillBadge from '../components/SkillBadge';
+import SportIcon from '../components/SportIcon';
 
 import { SKILL_LEVELS_BY_SPORT } from '../lib/skillLevels';
 
 const SPORTS = ['Beach Volleyball', 'Footvolley', 'Teqball'];
-const SPORT_LABEL = { 'Beach Volleyball': '🏐 Volleyball', 'Footvolley': '⚽ Footvolley', 'Teqball': '🏓 Teqball' };
+const SPORT_LABEL = { 'Beach Volleyball': 'Volleyball', 'Footvolley': 'Footvolley', 'Teqball': 'Teqball' };
 
 export default function Profile() {
   const { user, logout, updateUser } = useAuth();
@@ -128,7 +129,7 @@ export default function Profile() {
                     className={`flex-1 py-2 rounded-xl border-2 text-xs font-medium transition-all ${
                       form.sports.includes(sport) ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-slate-200 text-slate-600'
                     }`}>
-                    {SPORT_LABEL[sport]}
+                    <span className="inline-flex items-center gap-1"><SportIcon sport={sport} size={14} />{SPORT_LABEL[sport]}</span>
                   </button>
                 ))}
               </div>
@@ -163,7 +164,7 @@ export default function Profile() {
             <div className="flex items-center gap-2 flex-wrap">
               {(user.sports || []).map(s => (
                 <span key={s} className="bg-brand-50 text-brand-700 text-sm px-3 py-1 rounded-full font-medium">
-                  {SPORT_LABEL[s] || s}
+                  <span className="inline-flex items-center gap-1"><SportIcon sport={s} size={14} />{SPORT_LABEL[s] || s}</span>
                 </span>
               ))}
               {!user.sports?.length && <span className="text-slate-400 text-sm">No sport set</span>}

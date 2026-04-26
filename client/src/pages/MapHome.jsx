@@ -6,19 +6,28 @@ import { List, Map as MapIcon, SlidersHorizontal, X } from 'lucide-react';
 import { format } from 'date-fns';
 import api from '../api/client';
 import GameCard from '../components/GameCard';
+import SportIcon from '../components/SportIcon';
 import { SKILL_HEX, SKILL_LEVELS_BY_SPORT } from '../lib/skillLevels';
 
-const SPORT_ICON = { 'Beach Volleyball': '🏐', 'Footvolley': '⚽', 'Teqball': '🏓' };
+const SPORT_PIN_IMG = {
+  'Beach Volleyball': '/icons/volleyball-ball.jpg',
+  'Footvolley':       '/icons/footvolley-ball.png',
+  'Teqball':          '/icons/teqball-table.png',
+};
 
-const createGameIcon = (game) => L.divIcon({
+const createGameIcon = (game) => {
+  const src = SPORT_PIN_IMG[game.sport] || SPORT_PIN_IMG['Beach Volleyball'];
+  const iconContent = `<img src="${src}" style="width:20px;height:20px;object-fit:contain;transform:rotate(45deg);" alt="${game.sport}" />`;
+  return L.divIcon({
   className: '',
   html: `<div style="background:${SKILL_HEX[game.skill_level] || '#0ea5e9'};width:40px;height:40px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.25);border:2px solid white;">
-    <span style="transform:rotate(45deg);font-size:18px;line-height:1;">${SPORT_ICON[game.sport] || '🏐'}</span>
+    ${iconContent}
   </div>`,
   iconSize: [40, 40],
   iconAnchor: [20, 40],
   popupAnchor: [0, -44],
 });
+};
 
 function LocationSetter({ position }) {
   const map = useMap();
@@ -129,7 +138,7 @@ export default function MapHome() {
                 {SPORTS_LIST.map(s => (
                   <button key={s} onClick={() => setFilters(prev => ({ ...prev, sport: prev.sport === s ? '' : s }))}
                     className={`flex-1 py-1.5 rounded-lg text-xs font-medium border transition-all ${filters.sport === s ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-slate-200 text-slate-600'}`}>
-                    {s === 'Beach Volleyball' ? '🏐 Volleyball' : s === 'Footvolley' ? '⚽ Footvolley' : '🏓 Teqball'}
+                    <span className="inline-flex items-center gap-1"><SportIcon sport={s} size={14} />{s === 'Beach Volleyball' ? 'Volleyball' : s}</span>
                   </button>
                 ))}
               </div>

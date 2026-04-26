@@ -1,8 +1,10 @@
 DC_DEV  = docker compose -f docker-compose.dev.yml
 DC_PROD = docker compose -f docker-compose.prod.yml --env-file .env.prod
+DC_TEST = docker compose -f docker-compose.test.yml
 
 .PHONY: dev dev-build dev-down dev-logs dev-ps dev-seed \
         prod prod-build prod-down prod-logs prod-ps prod-seed \
+        test test-db test-db-down \
         clean
 
 # ── Development ────────────────────────────────────────────────────────────────
@@ -38,6 +40,18 @@ dev-seed: ## Seed the dev database with test data
 dev-db: ## Open a psql shell in the dev database
 	$(DC_DEV) exec db psql -U bally -d bally
 
+# ── Testing ────────────────────────────────────────────────────────────────────
+
+test-db: ## Start the test PostgreSQL container (port 5435)
+	$(DC_TEST) up -d --wait
+
+test-db-down: ## Stop and remove the test DB container
+	$(DC_TEST) down
+
+test: test-db ## Run all tests (starts test DB, runs backend + frontend tests)
+	npm run test --workspace=server
+	npm run test --workspace=client
+
 # ── Production ─────────────────────────────────────────────────────────────────
 
 prod: ## Start prod environment (requires .env.prod)
@@ -68,6 +82,7 @@ prod-db: ## Open a psql shell in the prod database
 clean: ## Remove all containers, images, and volumes for this project
 	$(DC_DEV) down -v --rmi local 2>/dev/null || true
 	$(DC_PROD) down -v --rmi local 2>/dev/null || true
+	$(DC_TEST) down -v 2>/dev/null || true
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'

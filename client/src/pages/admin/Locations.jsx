@@ -1,6 +1,22 @@
 import { useEffect, useState } from 'react';
-import { Plus, ToggleLeft, ToggleRight, Pencil, Check, X } from 'lucide-react';
+import { Plus, ToggleLeft, ToggleRight, Pencil, Check, X, ChevronsUpDown, ChevronUp, ChevronDown } from 'lucide-react';
 import api from '../../api/client';
+
+function Th({ label, col, sort, onSort, align = 'left' }) {
+  const active = sort.key === col;
+  const Icon = active ? (sort.dir === 'asc' ? ChevronUp : ChevronDown) : ChevronsUpDown;
+  return (
+    <th
+      onClick={() => onSort(col)}
+      className={`px-4 py-3 text-${align} text-xs text-slate-500 uppercase tracking-wide cursor-pointer select-none hover:text-slate-700 group`}
+    >
+      <span className="inline-flex items-center gap-1">
+        {label}
+        <Icon size={12} className={active ? 'text-brand-500' : 'text-slate-300 group-hover:text-slate-400'} />
+      </span>
+    </th>
+  );
+}
 
 function LocationRow({ loc, onToggle, onSave }) {
   const [editing, setEditing] = useState(false);
@@ -18,6 +34,9 @@ function LocationRow({ loc, onToggle, onSave }) {
           ? <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
               className="w-full border border-slate-200 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
           : <span className="text-slate-800 font-medium text-sm">{loc.name}</span>}
+      </td>
+      <td className="px-4 py-3">
+        <span className="text-slate-500 text-sm">{loc.city}</span>
       </td>
       <td className="px-4 py-3">
         {editing
@@ -61,6 +80,12 @@ export default function Locations() {
   const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
+  const [sort, setSort] = useState({ key: 'name', dir: 'asc' });
+
+  const toggleSort = (key) => setSort(prev => ({
+    key,
+    dir: prev.key === key && prev.dir === 'asc' ? 'desc' : 'asc',
+  }));
   const [newLoc, setNewLoc] = useState({ name: '', lat: '', lng: '' });
   const [msg, setMsg] = useState('');
 
@@ -97,6 +122,13 @@ export default function Locations() {
     fetchLocations();
   };
 
+  const sorted = [...locations].sort((a, b) => {
+    const val = x => x[sort.key] ?? '';
+    const av = val(a), bv = val(b);
+    const cmp = typeof av === 'number' ? av - bv : String(av).localeCompare(String(bv));
+    return sort.dir === 'asc' ? cmp : -cmp;
+  });
+
   return (
     <div className="p-6 max-w-3xl">
       <div className="flex items-center justify-between mb-5">
@@ -132,17 +164,18 @@ export default function Locations() {
           <div className="p-8 text-center text-slate-400">Loading…</div>
         ) : (
           <table className="w-full">
-            <thead className="bg-slate-50 border-b border-slate-100 text-xs text-slate-500 uppercase tracking-wide">
+            <thead className="bg-slate-50 border-b border-slate-100">
               <tr>
-                <th className="text-left px-4 py-3">Name</th>
-                <th className="text-left px-4 py-3">Lat</th>
-                <th className="text-left px-4 py-3">Lng</th>
-                <th className="text-left px-4 py-3">Status</th>
+                <Th label="Name"   col="name"      sort={sort} onSort={toggleSort} />
+                <Th label="City"   col="city"      sort={sort} onSort={toggleSort} />
+                <Th label="Lat"    col="lat"       sort={sort} onSort={toggleSort} />
+                <Th label="Lng"    col="lng"       sort={sort} onSort={toggleSort} />
+                <Th label="Status" col="is_active" sort={sort} onSort={toggleSort} />
                 <th className="px-4 py-3" />
               </tr>
             </thead>
             <tbody>
-              {locations.map(loc => (
+              {sorted.map(loc => (
                 <LocationRow key={loc.id} loc={loc} onToggle={handleToggle} onSave={handleSave} />
               ))}
             </tbody>
