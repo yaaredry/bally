@@ -42,6 +42,10 @@ function setupChat(io) {
 
     socket.on('send_message', async ({ gameId, message }) => {
       if (!message?.trim()) return;
+      if (message.trim().length > 500) {
+        socket.emit('chat_error', { message: 'Message too long (max 500 characters)' });
+        return;
+      }
 
       try {
         const rooms = Array.from(socket.rooms);

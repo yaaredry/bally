@@ -20,6 +20,12 @@ router.post('/signup', async (req, res) => {
   if (password.length < 6) {
     return res.status(400).json({ error: 'Password must be at least 6 characters' });
   }
+  if (display_name.length > 50) {
+    return res.status(400).json({ error: 'Display name must be 50 characters or fewer' });
+  }
+  if (email.length > 254) {
+    return res.status(400).json({ error: 'Email address is too long' });
+  }
 
   try {
     const existing = await pool.query('SELECT id FROM users WHERE email = $1', [email.toLowerCase()]);
