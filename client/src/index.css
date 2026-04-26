@@ -14,9 +14,20 @@
   }
 
   body {
-    background-color: #f0f9ff;
+    background-color: #fbf7ef;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    letter-spacing: -0.1px;
+    color: #1f1a14;
+
+    --g-sun:        linear-gradient(135deg, #f5b765 0%, #e87a4a 55%, #c8425a 100%);
+    --g-dawn:       linear-gradient(180deg, #f8c87a 0%, #e87a4a 50%, #b94a78 100%);
+    --g-dusk:       linear-gradient(160deg, #ffd9a8 0%, #e87a4a 45%, #6b3b6b 100%);
+    --g-coral-cta:  linear-gradient(180deg, #ee8856 0%, #d85e3a 100%);
+    --g-paper-warm: linear-gradient(180deg, #ffffff 0%, #fbf6eb 100%);
+    --g-pin:        linear-gradient(160deg, #f5b765, #e87a4a 60%, #c8425a);
+    --g-volley:     linear-gradient(160deg, #f5c47a 0%, #e8924a 100%);
+    --g-footvolley: linear-gradient(160deg, #ee7a5e 0%, #c8425a 100%);
   }
 }
 
@@ -33,24 +44,9 @@
   z-index: 0;
 }
 
-/* Custom game map pins */
-.game-pin {
-  width: 40px;
-  height: 40px;
-  border-radius: 50% 50% 50% 0;
-  transform: rotate(-45deg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-  border: 2px solid white;
-}
-
-.game-pin-inner {
-  transform: rotate(45deg);
-  font-size: 18px;
-  line-height: 1;
-}
+/* Custom game map pins — gradient teardrop */
+.game-pin svg { filter: drop-shadow(0 3px 6px rgba(31,26,20,0.18)); }
+.game-pin-focused svg { filter: drop-shadow(0 8px 18px rgba(31,26,20,0.25)); }
 
 /* Scrollbar styling */
 ::-webkit-scrollbar { width: 4px; }

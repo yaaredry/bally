@@ -255,16 +255,16 @@ export default function GameDetail() {
 
           <div className="space-y-2 text-sm text-slate-600">
             <div className="flex items-center gap-2">
-              <Clock size={15} className="text-brand-500 shrink-0" />
+              <Clock size={15} className="text-coral shrink-0" />
               <span>{format(new Date(game.game_date), 'EEEE, MMMM d · h:mm a')}</span>
               {game.duration_hours && <span className="text-slate-400">({game.duration_hours}h)</span>}
             </div>
             <div className="flex items-center gap-2">
-              <MapPin size={15} className="text-brand-500 shrink-0" />
+              <MapPin size={15} className="text-coral shrink-0" />
               <span>{game.location_name}</span>
             </div>
             <div className="flex items-center gap-2">
-              <Users size={15} className="text-brand-500 shrink-0" />
+              <Users size={15} className="text-coral shrink-0" />
               <span>
                 {game.approved_count} / {game.max_players} players
                 {!isFull && <span className="text-green-600 ml-1">· {game.slots_remaining} slot{game.slots_remaining !== 1 ? 's' : ''} left</span>}
@@ -306,7 +306,7 @@ export default function GameDetail() {
               <p className="font-semibold text-slate-800">{game.host_name}</p>
               {game.host_skill && <SkillBadge level={game.host_skill} small />}
             </div>
-            {isHost && <span className="ml-auto text-xs bg-brand-50 text-brand-600 px-2 py-0.5 rounded-full font-medium">You</span>}
+            {isHost && <span className="ml-auto text-xs bg-coral-soft text-coral px-2 py-0.5 rounded-full font-medium">You</span>}
           </div>
         </div>
 
@@ -388,7 +388,7 @@ export default function GameDetail() {
                     onClick={() => toggleGear(item)}
                     className={`flex flex-col gap-1.5 p-3 rounded-xl border-2 text-left transition-all ${
                       iMBringing
-                        ? 'border-brand-500 bg-brand-50'
+                        ? 'border-coral bg-coral-soft'
                         : 'border-slate-200 bg-white hover:border-slate-300'
                     }`}
                   >
@@ -407,7 +407,7 @@ export default function GameDetail() {
                             key={g.player_id}
                             className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${
                               g.player_id === user.id
-                                ? 'bg-brand-100 text-brand-700'
+                                ? 'bg-coral-soft text-coral-deep'
                                 : 'bg-slate-100 text-slate-600'
                             }`}
                           >
@@ -434,15 +434,16 @@ export default function GameDetail() {
               disabled={!canJoin || joining}
               className={`w-full py-4 rounded-2xl font-bold text-base transition-colors ${
                 game.my_request_status === 'approved'
-                  ? 'bg-green-500 text-white'
+                  ? 'bg-success text-white'
                   : game.my_request_status === 'pending'
                   ? 'bg-yellow-100 text-yellow-700 cursor-default'
                   : game.my_request_status === 'declined'
                   ? 'bg-red-100 text-red-600 cursor-default'
                   : canJoin
-                  ? 'bg-accent-500 hover:bg-accent-600 text-white shadow-lg shadow-accent-500/25'
-                  : 'bg-slate-100 text-slate-400 cursor-default'
+                  ? 'text-white shadow-coral'
+                  : 'bg-sand text-ink-35 cursor-default'
               }`}
+              style={canJoin && !game.my_request_status ? { background: 'linear-gradient(180deg,#ee8856 0%,#d85e3a 100%)' } : undefined}
             >
               {joining ? 'Sending request…' : joinButtonLabel()}
             </button>
@@ -490,7 +491,7 @@ export default function GameDetail() {
                         <AvatarDisplay seed={msg.sender_avatar} name={msg.sender_name} size="xs" />
                         <div className={`max-w-[75%] ${isMe ? 'items-end' : 'items-start'} flex flex-col`}>
                           {!isMe && <span className="text-xs text-slate-400 mb-0.5 ml-1">{msg.sender_name}</span>}
-                          <div className={`px-3 py-2 rounded-2xl text-sm ${isMe ? 'bg-brand-500 text-white rounded-tr-sm' : 'bg-slate-100 text-slate-800 rounded-tl-sm'}`}>
+                          <div className={`px-3 py-2 rounded-2xl text-sm ${isMe ? 'text-white rounded-tr-sm' : 'bg-sand text-ink rounded-tl-sm'}`} style={isMe ? { background: 'linear-gradient(135deg,#ee8856,#d85e3a)' } : undefined}>
                             {msg.message}
                           </div>
                           <span className="text-xs text-slate-400 mt-0.5 mx-1">
@@ -508,12 +509,12 @@ export default function GameDetail() {
                   value={msgInput}
                   onChange={e => setMsgInput(e.target.value)}
                   placeholder="Message…"
-                  className="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
+                  className="flex-1 border border-hairline rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-coral"
                 />
                 <button
                   type="submit"
                   disabled={!msgInput.trim()}
-                  className="p-2.5 bg-brand-500 disabled:opacity-50 text-white rounded-xl transition-colors"
+                  style={{ padding: '10px', background: 'linear-gradient(180deg,#ee8856 0%,#d85e3a 100%)', borderRadius: 12, border: 'none', cursor: msgInput.trim() ? 'pointer' : 'not-allowed', opacity: msgInput.trim() ? 1 : 0.4 }}
                 >
                   <Send size={16} />
                 </button>

@@ -151,7 +151,7 @@ export default function CreateGame() {
             {SPORTS.map(s => (
               <button key={s} type="button" onClick={() => handleSportChange(s)}
                 className={`flex-1 py-3 rounded-xl border-2 text-sm font-medium transition-all ${
-                  form.sport === s ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-slate-200 text-slate-600'
+                  form.sport === s ? 'border-coral bg-coral-soft text-coral-deep' : 'border-slate-200 text-slate-600'
                 }`}>
                 <SportIcon sport={s} size={18} className="mr-1" /> {s === 'Beach Volleyball' ? 'Volleyball' : s}
               </button>
@@ -166,7 +166,7 @@ export default function CreateGame() {
             {availableFormats.map(f => (
               <button key={f} type="button" onClick={() => handleFormatChange(f)}
                 className={`py-2.5 px-4 rounded-xl border-2 text-sm font-medium transition-all ${
-                  form.format === f ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-slate-200 text-slate-600'
+                  form.format === f ? 'border-coral bg-coral-soft text-coral-deep' : 'border-slate-200 text-slate-600'
                 }`}>
                 {f}
               </button>
@@ -184,7 +184,7 @@ export default function CreateGame() {
               {skillOptions.map(s => (
                 <button key={s} type="button" onClick={() => set('skill_level', s)}
                   className={`py-2 px-3 rounded-xl border-2 text-sm font-medium transition-all ${
-                    form.skill_level === s ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-slate-200 text-slate-600'
+                    form.skill_level === s ? 'border-coral bg-coral-soft text-coral-deep' : 'border-slate-200 text-slate-600'
                   }`}>
                   {s}
                 </button>
@@ -202,7 +202,7 @@ export default function CreateGame() {
               value={form.game_date}
               min={minDate}
               onChange={e => set('game_date', e.target.value)}
-              className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-400"
+              className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-coral"
             />
           </div>
           <div>
@@ -210,7 +210,7 @@ export default function CreateGame() {
             <select
               value={form.duration_hours}
               onChange={e => set('duration_hours', parseFloat(e.target.value))}
-              className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-400 bg-white"
+              className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-coral bg-white"
             >
               {DURATIONS.map(d => <option key={d} value={d}>{d}h</option>)}
             </select>
@@ -226,7 +226,7 @@ export default function CreateGame() {
             type="number" min="2" max="30"
             value={form.max_players}
             onChange={e => set('max_players', parseInt(e.target.value))}
-            className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-400"
+            className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-coral"
           />
         </div>
 
@@ -238,7 +238,7 @@ export default function CreateGame() {
           <select
             value={selectedCity}
             onChange={e => handleCityChange(e.target.value)}
-            className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-brand-400"
+            className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-coral"
           >
             <option value="">Select a city…</option>
             {cities.map(city => (
@@ -251,7 +251,7 @@ export default function CreateGame() {
             <select
               value={selectedLocationId}
               onChange={e => handleLocationSelect(e.target.value)}
-              className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-brand-400"
+              className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-coral"
             >
               <option value="">Select a beach in {selectedCity}…</option>
               {beachesForCity.map(loc => (
@@ -269,7 +269,7 @@ export default function CreateGame() {
                 value={customLocationName}
                 onChange={e => { setCustomLocationName(e.target.value); set('location_name', e.target.value); }}
                 placeholder="e.g. Herzliya Marina Court 2"
-                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-400"
+                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-coral"
               />
               <p className="text-xs text-slate-500">Tap the map to drop a pin on your location</p>
               <div className="h-48 rounded-2xl overflow-hidden border border-slate-200">
@@ -293,14 +293,14 @@ export default function CreateGame() {
             onChange={e => set('notes', e.target.value)}
             placeholder="e.g. Bring your own ball, warm-up starts 10 min early"
             rows={2}
-            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-400 resize-none"
+            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-coral resize-none"
           />
         </div>
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-accent-500 hover:bg-accent-600 disabled:opacity-60 text-white font-bold py-4 rounded-2xl text-base transition-colors shadow-lg shadow-accent-500/25"
+          style={{ width: '100%', padding: '16px 0', borderRadius: 16, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', background: loading ? 'rgba(31,26,20,0.12)' : 'linear-gradient(180deg,#ee8856 0%,#d85e3a 100%)', color: loading ? 'rgba(31,26,20,0.35)' : '#fff', fontWeight: 700, fontSize: 15, boxShadow: loading ? 'none' : '0 8px 22px rgba(216,89,59,0.32)' }}
         >
           {loading ? 'Publishing…' : 'Publish Game'}
         </button>

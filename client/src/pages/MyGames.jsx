@@ -32,7 +32,7 @@ function GameRow({ game, myStatus, isHosting, navigate, userId }) {
               </span>
             )}
             {isHosting && (
-              <span className="text-xs bg-brand-50 text-brand-700 px-2 py-0.5 rounded-full font-medium">Hosting</span>
+              <span className="text-xs bg-coral-soft text-coral-deep px-2 py-0.5 rounded-full font-medium">Hosting</span>
             )}
             {isPast && (
               <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">Past</span>
@@ -82,7 +82,7 @@ export default function MyGames() {
 
   return (
     <div className="p-4 space-y-3 overflow-y-auto h-full">
-      <h1 className="text-xl font-bold text-slate-800">My Games</h1>
+      <h1 className="text-xl font-bold text-ink">My Games</h1>
 
       {/* Tabs */}
       <div className="flex gap-2 bg-slate-100 p-1 rounded-xl">
@@ -91,7 +91,7 @@ export default function MyGames() {
             key={t}
             onClick={() => setTab(t)}
             className={`flex-1 py-2 rounded-lg text-sm font-semibold capitalize transition-all ${
-              tab === t ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500'
+              tab === t ? 'bg-white text-ink shadow-sm' : 'text-ink-55'
             }`}
           >
             {t} {t === 'upcoming' ? `(${upcoming.length})` : `(${past.length})`}
@@ -102,8 +102,7 @@ export default function MyGames() {
       {loading ? (
         <div className="text-center text-slate-400 py-10">Loading…</div>
       ) : displayed.length === 0 ? (
-        <div className="text-center py-12 text-slate-400">
-          <div className="text-4xl mb-2">🏖️</div>
+        <div className="text-center py-12 text-ink-35">
           <p>{tab === 'upcoming' ? 'No upcoming games. Create or join one!' : 'No past games yet.'}</p>
         </div>
       ) : (

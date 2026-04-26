@@ -4,7 +4,6 @@ import { LogOut, Edit2, Check, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
 import AvatarDisplay from '../components/AvatarDisplay';
-import AvatarPicker from '../components/AvatarPicker';
 import SkillBadge from '../components/SkillBadge';
 import SportIcon from '../components/SportIcon';
 
@@ -24,7 +23,6 @@ export default function Profile() {
     home_beach: user.home_beach || '',
     sports: user.sports || [],
     skill_level: user.skill_level || '',
-    avatar_seed: user.avatar_seed || 'beach-ace',
   });
 
   const set = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
@@ -64,11 +62,11 @@ export default function Profile() {
         <div className="flex items-start justify-between mb-4">
           {editing ? (
             <div className="flex gap-2">
-              <button onClick={() => setEditing(false)} className="p-2 rounded-xl bg-slate-100 text-slate-600"><X size={18} /></button>
-              <button onClick={handleSave} disabled={saving} className="p-2 rounded-xl bg-brand-500 text-white"><Check size={18} /></button>
+              <button onClick={() => setEditing(false)} className="p-2 rounded-xl bg-sand text-ink-70"><X size={18} /></button>
+              <button onClick={handleSave} disabled={saving} style={{ padding: 8, borderRadius: 12, border: 'none', background: 'linear-gradient(180deg,#ee8856 0%,#d85e3a 100%)', cursor: 'pointer' }} className="text-white"><Check size={18} /></button>
             </div>
           ) : (
-            <button onClick={() => setEditing(true)} className="p-2 rounded-xl bg-slate-100 text-slate-600 ml-auto">
+            <button onClick={() => setEditing(true)} className="p-2 rounded-xl bg-sand text-ink-70 ml-auto">
               <Edit2 size={18} />
             </button>
           )}
@@ -78,13 +76,7 @@ export default function Profile() {
 
         {/* Avatar */}
         <div className="flex flex-col items-center mb-4">
-          <AvatarDisplay seed={editing ? form.avatar_seed : user.avatar_seed} name={user.display_name} size="xl" />
-          {editing && (
-            <div className="mt-3 w-full">
-              <p className="text-xs text-slate-500 text-center mb-2">Choose avatar</p>
-              <AvatarPicker selected={form.avatar_seed} onSelect={seed => set('avatar_seed', seed)} />
-            </div>
-          )}
+          <AvatarDisplay name={user.display_name} size="xl" />
         </div>
 
         {editing ? (
@@ -94,7 +86,7 @@ export default function Profile() {
               <input
                 value={form.display_name}
                 onChange={e => set('display_name', e.target.value)}
-                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
+                className="w-full border border-hairline bg-sand rounded-xl px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-coral"
               />
             </div>
             <div>
@@ -103,14 +95,14 @@ export default function Profile() {
                 value={form.home_beach}
                 onChange={e => set('home_beach', e.target.value)}
                 placeholder="e.g. Gordon Beach"
-                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
+                className="w-full border border-hairline bg-sand rounded-xl px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-coral"
               />
             </div>
           </div>
         ) : (
           <div className="text-center">
             <h2 className="text-xl font-bold text-slate-800">{user.display_name}</h2>
-            {user.home_beach && <p className="text-slate-500 text-sm mt-0.5">📍 {user.home_beach}</p>}
+            {user.home_beach && <p className="text-ink-55 text-sm mt-0.5">{user.home_beach}</p>}
           </div>
         )}
       </div>
@@ -127,7 +119,7 @@ export default function Profile() {
                 {SPORTS.map(sport => (
                   <button key={sport} type="button" onClick={() => toggleSport(sport)}
                     className={`flex-1 py-2 rounded-xl border-2 text-xs font-medium transition-all ${
-                      form.sports.includes(sport) ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-slate-200 text-slate-600'
+                      form.sports.includes(sport) ? 'border-coral bg-coral-soft text-coral-deep' : 'border-slate-200 text-slate-600'
                     }`}>
                     <span className="inline-flex items-center gap-1"><SportIcon sport={sport} size={14} />{SPORT_LABEL[sport]}</span>
                   </button>
@@ -148,7 +140,7 @@ export default function Profile() {
                       {SKILL_LEVELS_BY_SPORT[sport].map(lvl => (
                         <button key={lvl} type="button" onClick={() => set('skill_level', lvl)}
                           className={`py-1.5 px-2.5 rounded-xl border-2 text-xs font-medium transition-all ${
-                            form.skill_level === lvl ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-slate-200 text-slate-600'
+                            form.skill_level === lvl ? 'border-coral bg-coral-soft text-coral-deep' : 'border-slate-200 text-slate-600'
                           }`}>
                           {lvl}
                         </button>
@@ -163,7 +155,7 @@ export default function Profile() {
           <div className="space-y-2">
             <div className="flex items-center gap-2 flex-wrap">
               {(user.sports || []).map(s => (
-                <span key={s} className="bg-brand-50 text-brand-700 text-sm px-3 py-1 rounded-full font-medium">
+                <span key={s} className="bg-coral-soft text-coral-deep text-sm px-3 py-1 rounded-full font-medium">
                   <span className="inline-flex items-center gap-1"><SportIcon sport={s} size={14} />{SPORT_LABEL[s] || s}</span>
                 </span>
               ))}
@@ -177,11 +169,11 @@ export default function Profile() {
       {/* Stats */}
       <div className="grid grid-cols-2 gap-3">
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 text-center">
-          <div className="text-2xl font-bold text-brand-600">{user.games_hosted ?? 0}</div>
+          <div className="text-2xl font-bold text-coral">{user.games_hosted ?? 0}</div>
           <div className="text-xs text-slate-500 mt-0.5">Games hosted</div>
         </div>
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 text-center">
-          <div className="text-2xl font-bold text-accent-500">{user.games_played ?? 0}</div>
+          <div className="text-2xl font-bold text-coral">{user.games_played ?? 0}</div>
           <div className="text-xs text-slate-500 mt-0.5">Games played</div>
         </div>
       </div>

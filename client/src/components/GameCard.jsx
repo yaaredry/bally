@@ -40,7 +40,7 @@ export default function GameCard({ game }) {
                 {format(new Date(game.game_date), 'EEE MMM d, h:mm a')}
               </span>
             </div>
-            <div className={`flex items-center gap-1 text-sm font-medium ${isFull ? 'text-red-500' : 'text-brand-600'}`}>
+            <div className={`flex items-center gap-1 text-sm font-medium ${isFull ? 'text-danger' : 'text-coral'}`}>
               <Users size={13} />
               {isFull ? 'Full' : `${slotsLeft} left`}
             </div>
