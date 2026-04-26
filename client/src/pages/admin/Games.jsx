@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Search, ChevronRight, Ban, ChevronsUpDown, ChevronUp, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
 import api from '../../api/client';
+import SportIcon from '../../components/SportIcon';
 
 function Th({ label, col, sort, onSort, align = 'left' }) {
   const active = sort.key === col;
@@ -121,7 +122,7 @@ export default function Games() {
                 <tr key={g.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-4 py-3">
                     <div className="font-medium text-slate-800">
-                      {g.sport === 'Beach Volleyball' ? '🏐' : '⚽'} {g.format} · {g.skill_level}
+                      <SportIcon sport={g.sport} size={16} className="mr-1" />{g.format} · {g.skill_level}
                     </div>
                     <div className="text-xs text-slate-400">{g.location_name}</div>
                   </td>
