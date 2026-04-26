@@ -4,9 +4,9 @@ import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import { ChevronLeft } from 'lucide-react';
 import api from '../api/client';
 import { SKILL_LEVELS_BY_SPORT } from '../lib/skillLevels';
+import SportIcon from '../components/SportIcon';
 
 const SPORTS = ['Beach Volleyball', 'Footvolley', 'Teqball'];
-const SPORT_ICON = { 'Beach Volleyball': '🏐', 'Footvolley': '⚽', 'Teqball': '🏓' };
 const FORMATS = ['1v1', '2v2', '3v3', '4v4', 'Custom'];
 const FORMATS_BY_SPORT = {
   'Beach Volleyball': ['2v2', '3v3', '4v4', 'Custom'],
@@ -153,7 +153,7 @@ export default function CreateGame() {
                 className={`flex-1 py-3 rounded-xl border-2 text-sm font-medium transition-all ${
                   form.sport === s ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-slate-200 text-slate-600'
                 }`}>
-                {SPORT_ICON[s]} {s === 'Beach Volleyball' ? 'Volleyball' : s}
+                <SportIcon sport={s} size={18} className="mr-1" /> {s === 'Beach Volleyball' ? 'Volleyball' : s}
               </button>
             ))}
           </div>

@@ -294,6 +294,56 @@ router.post('/:id/complete', authenticate, async (req, res) => {
   }
 });
 
+// DELETE /api/games/:id/leave — approved player opts out of a game
+router.delete('/:id/leave', authenticate, async (req, res) => {
+  try {
+    const game = await pool.query('SELECT status FROM games WHERE id = $1', [req.params.id]);
+    if (!game.rows.length) return res.status(404).json({ error: 'Game not found' });
+    if (['cancelled', 'completed'].includes(game.rows[0].status)) {
+      return res.status(400).json({ error: 'Cannot leave a finished or cancelled game' });
+    }
+
+    // Confirm player is approved (not host)
+    const reqRow = await pool.query(
+      "SELECT id FROM game_requests WHERE game_id = $1 AND player_id = $2 AND status = 'approved'",
+      [req.params.id, req.user.id]
+    );
+    if (!reqRow.rows.length) return res.status(400).json({ error: 'You are not an approved player in this game' });
+
+    // Remove from game
+    await pool.query('DELETE FROM game_requests WHERE game_id = $1 AND player_id = $2', [req.params.id, req.user.id]);
+    await pool.query('UPDATE users SET games_played = GREATEST(games_played - 1, 0) WHERE id = $1', [req.user.id]);
+    await pool.query('DELETE FROM game_gear WHERE game_id = $1 AND player_id = $2', [req.params.id, req.user.id]);
+
+    // If game was full, reopen it
+    if (game.rows[0].status === 'full') {
+      await pool.query("UPDATE games SET status = 'open' WHERE id = $1", [req.params.id]);
+    }
+
+    // Post system message to chat
+    const userRow = await pool.query('SELECT display_name FROM users WHERE id = $1', [req.user.id]);
+    const name = userRow.rows[0]?.display_name || 'A player';
+    const { rows: [msg] } = await pool.query(
+      `INSERT INTO chat_messages (game_id, sender_id, message, is_system)
+       VALUES ($1, NULL, $2, TRUE) RETURNING id, message, is_system, created_at`,
+      [req.params.id, `${name} has withdrawn from the game.`]
+    );
+
+    // Emit via Socket.io so connected players see it immediately
+    req.app.get('io')?.to(`game:${req.params.id}`).emit('new_message', {
+      ...msg,
+      sender_name: 'Operator',
+      sender_avatar: null,
+      sender_id: null,
+    });
+
+    res.json({ message: 'Left game', system_message: msg });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // POST /api/games/:id/gear — declare you'll bring an item
 router.post('/:id/gear', authenticate, async (req, res) => {
   const { item } = req.body;
@@ -339,10 +389,14 @@ router.delete('/:id/gear/:item', authenticate, async (req, res) => {
 router.get('/:id/my-ratings', authenticate, async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT rated_id FROM ratings WHERE game_id = $1 AND rater_id = $2',
+      'SELECT rated_id, stars, updated_at FROM ratings WHERE game_id = $1 AND rater_id = $2',
       [req.params.id, req.user.id]
     );
-    res.json({ rated_ids: result.rows.map(r => r.rated_id) });
+    const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    res.json({
+      stars_map:  Object.fromEntries(result.rows.map(r => [r.rated_id, r.stars])),
+      locked_ids: result.rows.filter(r => new Date(r.updated_at).getTime() < cutoff).map(r => r.rated_id),
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
@@ -398,8 +452,21 @@ router.post('/:id/rate', authenticate, async (req, res) => {
       return res.status(400).json({ error: 'Rated player was not part of this game' });
     }
 
+    // If a rating already exists, block the update if it was last changed > 7 days ago
+    const existing = await pool.query(
+      'SELECT updated_at FROM ratings WHERE game_id = $1 AND rater_id = $2 AND rated_id = $3',
+      [req.params.id, req.user.id, rated_id]
+    );
+    if (existing.rows.length) {
+      const daysSinceUpdate = (Date.now() - new Date(existing.rows[0].updated_at).getTime()) / (1000 * 60 * 60 * 24);
+      if (daysSinceUpdate > 7) {
+        return res.status(403).json({ error: 'Rating can no longer be changed (7-day window passed)' });
+      }
+    }
+
     await pool.query(
-      'INSERT INTO ratings (game_id, rater_id, rated_id, stars) VALUES ($1,$2,$3,$4)',
+      `INSERT INTO ratings (game_id, rater_id, rated_id, stars) VALUES ($1,$2,$3,$4)
+       ON CONFLICT (game_id, rater_id, rated_id) DO UPDATE SET stars = EXCLUDED.stars, updated_at = NOW()`,
       [req.params.id, req.user.id, rated_id, stars]
     );
 

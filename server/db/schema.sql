@@ -54,12 +54,13 @@ CREATE TABLE IF NOT EXISTS game_requests (
 CREATE INDEX IF NOT EXISTS idx_requests_game ON game_requests(game_id);
 CREATE INDEX IF NOT EXISTS idx_requests_player ON game_requests(player_id);
 
--- Chat messages
+-- Chat messages (sender_id is NULL for system/operator messages)
 CREATE TABLE IF NOT EXISTS chat_messages (
   id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   game_id    UUID NOT NULL REFERENCES games(id) ON DELETE CASCADE,
-  sender_id  UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  sender_id  UUID REFERENCES users(id) ON DELETE CASCADE,
   message    TEXT NOT NULL,
+  is_system  BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -84,6 +85,7 @@ CREATE TABLE IF NOT EXISTS ratings (
   rated_id   UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   stars      SMALLINT NOT NULL CHECK (stars BETWEEN 1 AND 5),
   created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(game_id, rater_id, rated_id)
 );
 
