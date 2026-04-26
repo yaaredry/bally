@@ -538,4 +538,167 @@ describe('Admin error paths (invalid UUID triggers 500)', () => {
       .set('Cookie', adminCookie(admin));
     expect(res.status).toBe(500);
   });
+
+  test('GET /api/admin/games/:id with invalid UUID returns 500', async () => {
+    const admin = await createUser({ is_admin: true });
+    const res = await request(app)
+      .get(`/api/admin/games/${INVALID}`)
+      .set('Cookie', adminCookie(admin));
+    expect(res.status).toBe(500);
+  });
+});
+
+// ── Admin 404 edge cases ──────────────────────────────────────────────────────
+
+describe('Admin 404 and branch edge cases', () => {
+  test('GET /api/admin/stats with existing requests covers approval_rate > 0 branch', async () => {
+    const admin = await createUser({ is_admin: true });
+    const host = await createUser();
+    const player = await createUser();
+    const game = await makeGame(host.id);
+    // Insert an approved request so approval_rate calculation hits the truthy branch
+    await pool.query(
+      "INSERT INTO game_requests (game_id, player_id, status) VALUES ($1,$2,'approved')",
+      [game.id, player.id]
+    );
+    const res = await request(app).get('/api/admin/stats').set('Cookie', adminCookie(admin));
+    expect(res.status).toBe(200);
+    expect(res.body.requests.approval_rate).toBeGreaterThanOrEqual(0);
+  });
+
+  test('PUT /api/admin/users/:id returns 404 for non-existent user', async () => {
+    const admin = await createUser({ is_admin: true });
+    const res = await request(app)
+      .put('/api/admin/users/00000000-0000-0000-0000-000000000000')
+      .set('Cookie', adminCookie(admin))
+      .send({ display_name: 'Ghost' });
+    expect(res.status).toBe(404);
+  });
+
+  test('PUT /api/admin/users/:id/password returns 404 for non-existent user', async () => {
+    const admin = await createUser({ is_admin: true });
+    const res = await request(app)
+      .put('/api/admin/users/00000000-0000-0000-0000-000000000000/password')
+      .set('Cookie', adminCookie(admin))
+      .send({ password: 'newpassword123' });
+    expect(res.status).toBe(404);
+  });
+
+  test('GET /api/admin/games/:id returns 404 for non-existent game', async () => {
+    const admin = await createUser({ is_admin: true });
+    const res = await request(app)
+      .get('/api/admin/games/00000000-0000-0000-0000-000000000000')
+      .set('Cookie', adminCookie(admin));
+    expect(res.status).toBe(404);
+  });
+
+  test('PUT /api/admin/games/:id returns 404 for non-existent game', async () => {
+    const admin = await createUser({ is_admin: true });
+    const res = await request(app)
+      .put('/api/admin/games/00000000-0000-0000-0000-000000000000')
+      .set('Cookie', adminCookie(admin))
+      .send({ notes: 'Test' });
+    expect(res.status).toBe(404);
+  });
+
+  test('PUT /api/admin/locations/:id returns 404 for non-existent location', async () => {
+    const admin = await createUser({ is_admin: true });
+    const res = await request(app)
+      .put('/api/admin/locations/00000000-0000-0000-0000-000000000000')
+      .set('Cookie', adminCookie(admin))
+      .send({ name: 'Ghost Beach' });
+    expect(res.status).toBe(404);
+  });
+
+  test('PATCH /api/admin/locations/:id/toggle returns 404 for non-existent location', async () => {
+    const admin = await createUser({ is_admin: true });
+    const res = await request(app)
+      .patch('/api/admin/locations/00000000-0000-0000-0000-000000000000/toggle')
+      .set('Cookie', adminCookie(admin));
+    expect(res.status).toBe(404);
+  });
+
+  test('GET /api/admin/ratings with user_id and game_id filters', async () => {
+    const admin = await createUser({ is_admin: true });
+    const res = await request(app)
+      .get('/api/admin/ratings?user_id=00000000-0000-0000-0000-000000000000&game_id=00000000-0000-0000-0000-000000000000')
+      .set('Cookie', adminCookie(admin));
+    expect(res.status).toBe(200);
+    expect(res.body.ratings).toEqual([]);
+  });
+});
+
+// ── Duplicate location name (23505 error path) ────────────────────────────────
+
+describe('POST /api/admin/locations — duplicate name', () => {
+  test('returns 400 when location name already exists', async () => {
+    const admin = await createUser({ is_admin: true });
+    await pool.query(
+      "INSERT INTO locations (name, city, lat, lng) VALUES ('Duplicate Beach', 'Tel Aviv', 32.0, 34.7)"
+    );
+    const res = await request(app)
+      .post('/api/admin/locations')
+      .set('Cookie', adminCookie(admin))
+      .send({ name: 'Duplicate Beach', city: 'Tel Aviv', lat: 32.0, lng: 34.7 });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/already exists/i);
+  });
+});
+
+// ── DB error catch blocks (jest.spyOn on pool.query) ─────────────────────────
+
+describe('Admin DB error catch paths', () => {
+  afterEach(() => { jest.restoreAllMocks(); });
+
+  test('returns 500 when DB fails on GET /admin/stats', async () => {
+    const admin = await createUser({ is_admin: true });
+    jest.spyOn(pool, 'query').mockRejectedValueOnce(new Error('DB error'));
+    const res = await request(app).get('/api/admin/stats').set('Cookie', adminCookie(admin));
+    expect(res.status).toBe(500);
+  });
+
+  test('returns 500 when DB fails on GET /admin/users', async () => {
+    const admin = await createUser({ is_admin: true });
+    jest.spyOn(pool, 'query').mockRejectedValueOnce(new Error('DB error'));
+    const res = await request(app).get('/api/admin/users').set('Cookie', adminCookie(admin));
+    expect(res.status).toBe(500);
+  });
+
+  test('returns 500 when DB fails on GET /admin/games', async () => {
+    const admin = await createUser({ is_admin: true });
+    jest.spyOn(pool, 'query').mockRejectedValueOnce(new Error('DB error'));
+    const res = await request(app).get('/api/admin/games').set('Cookie', adminCookie(admin));
+    expect(res.status).toBe(500);
+  });
+
+  test('returns 500 when DB fails on GET /admin/locations', async () => {
+    const admin = await createUser({ is_admin: true });
+    jest.spyOn(pool, 'query').mockRejectedValueOnce(new Error('DB error'));
+    const res = await request(app).get('/api/admin/locations').set('Cookie', adminCookie(admin));
+    expect(res.status).toBe(500);
+  });
+
+  test('returns 500 when DB fails on GET /admin/ratings', async () => {
+    const admin = await createUser({ is_admin: true });
+    jest.spyOn(pool, 'query').mockRejectedValueOnce(new Error('DB error'));
+    const res = await request(app).get('/api/admin/ratings').set('Cookie', adminCookie(admin));
+    expect(res.status).toBe(500);
+  });
+
+  test('returns 500 when DB fails on GET /admin/matching', async () => {
+    const admin = await createUser({ is_admin: true });
+    jest.spyOn(pool, 'query').mockRejectedValueOnce(new Error('DB error'));
+    const res = await request(app).get('/api/admin/matching').set('Cookie', adminCookie(admin));
+    expect(res.status).toBe(500);
+  });
+
+  test('returns 500 when non-23505 DB error occurs on POST /admin/locations', async () => {
+    const admin = await createUser({ is_admin: true });
+    jest.spyOn(pool, 'query').mockRejectedValueOnce(new Error('DB error'));
+    const res = await request(app)
+      .post('/api/admin/locations')
+      .set('Cookie', adminCookie(admin))
+      .send({ name: 'Error Beach', city: 'Tel Aviv', lat: 32.0, lng: 34.7 });
+    expect(res.status).toBe(500);
+  });
 });
