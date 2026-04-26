@@ -211,23 +211,23 @@ export default function GameDetail() {
         />
       )}
       {/* Back nav */}
-      <div className="flex items-center gap-3 p-4 sticky top-0 bg-white border-b border-slate-100 z-10">
-        <button onClick={() => navigate(-1)} className="p-1.5 rounded-xl bg-slate-100 text-slate-600">
+      <div className="flex items-center gap-3 p-4 sticky top-0 z-10" style={{ background: '#fbf7ef', borderBottom: '0.5px solid rgba(31,26,20,0.08)' }}>
+        <button onClick={() => navigate(-1)} className="p-2 rounded-xl bg-sand text-ink-70">
           <ChevronLeft size={20} />
         </button>
-        <h1 className="text-lg font-bold text-slate-800">
-          <SportIcon sport={game.sport} size={20} className="mr-1" /> {game.sport} · {game.format}
+        <h1 className="text-base font-bold text-ink flex-1 truncate">
+          {game.sport} · {game.format}
         </h1>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="flex items-center gap-2">
           <button
             onClick={shareGame}
-            className="p-1.5 rounded-xl bg-slate-100 text-slate-600 relative"
+            className="p-2 rounded-xl bg-sand text-ink-70 relative"
             title="Share game"
           >
-            {copied ? <Check size={18} className="text-green-600" /> : <Share2 size={18} />}
+            {copied ? <Check size={18} className="text-success" /> : <Share2 size={18} />}
           </button>
           {isHost && (
-            <button onClick={() => navigate(`/host/${id}`)} className="p-1.5 rounded-xl bg-slate-100 text-slate-600">
+            <button onClick={() => navigate(`/host/${id}`)} className="p-2 rounded-xl bg-sand text-ink-70">
               <Settings size={18} />
             </button>
           )}
@@ -514,7 +514,7 @@ export default function GameDetail() {
                 <button
                   type="submit"
                   disabled={!msgInput.trim()}
-                  style={{ padding: '10px', background: 'linear-gradient(180deg,#ee8856 0%,#d85e3a 100%)', borderRadius: 12, border: 'none', cursor: msgInput.trim() ? 'pointer' : 'not-allowed', opacity: msgInput.trim() ? 1 : 0.4 }}
+                  style={{ padding: '10px', background: 'linear-gradient(180deg,#ee8856 0%,#d85e3a 100%)', borderRadius: 12, border: 'none', color: '#fff', cursor: msgInput.trim() ? 'pointer' : 'not-allowed', opacity: msgInput.trim() ? 1 : 0.4 }}
                 >
                   <Send size={16} />
                 </button>

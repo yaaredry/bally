@@ -207,8 +207,8 @@ export default function MapHome() {
             ))}
           </MapContainer>
 
-          {/* Game count badge */}
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white rounded-full px-4 py-2 shadow text-sm font-medium text-ink-70 z-10">
+          {/* Game count badge — sits above the BottomNav */}
+          <div className="absolute left-1/2 -translate-x-1/2 bg-white rounded-full px-4 py-2 shadow text-sm font-medium text-ink-70 z-10" style={{ bottom: 'calc(env(safe-area-inset-bottom) + 88px)' }}>
             {loading ? 'Loading…' : `${games.length} game${games.length !== 1 ? 's' : ''} nearby`}
           </div>
         </div>

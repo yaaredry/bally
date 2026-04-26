@@ -115,10 +115,10 @@ export default function Profile() {
           <div className="space-y-3">
             <div>
               <label className="text-xs text-slate-500 mb-1 block">Sports</label>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 {SPORTS.map(sport => (
                   <button key={sport} type="button" onClick={() => toggleSport(sport)}
-                    className={`flex-1 py-2 rounded-xl border-2 text-xs font-medium transition-all ${
+                    className={`flex-1 min-w-[80px] py-3 rounded-xl border-2 text-xs font-medium transition-all ${
                       form.sports.includes(sport) ? 'border-coral bg-coral-soft text-coral-deep' : 'border-slate-200 text-slate-600'
                     }`}>
                     <span className="inline-flex items-center gap-1"><SportIcon sport={sport} size={14} />{SPORT_LABEL[sport]}</span>

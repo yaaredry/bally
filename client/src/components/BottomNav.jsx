@@ -20,7 +20,7 @@ export default function BottomNav() {
   const navigate = useNavigate();
 
   const linkClass = (isActive) =>
-    `flex flex-col items-center gap-0.5 transition-colors ${isActive ? 'text-ink' : 'text-ink-35'}`;
+    `flex flex-col items-center justify-center gap-0.5 transition-colors min-h-[44px] px-3 ${isActive ? 'text-ink' : 'text-ink-35'}`;
 
   return (
     <nav

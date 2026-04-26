@@ -74,13 +74,13 @@ export default function HostDashboard() {
   return (
     <div className="h-full overflow-y-auto">
       {/* Header */}
-      <div className="flex items-center gap-3 p-4 sticky top-0 bg-white border-b border-slate-100 z-10">
-        <button onClick={() => navigate(-1)} className="p-1.5 rounded-xl bg-slate-100 text-slate-600">
+      <div className="flex items-center gap-3 p-4 sticky top-0 z-10" style={{ background: '#fbf7ef', borderBottom: '0.5px solid rgba(31,26,20,0.08)' }}>
+        <button onClick={() => navigate(-1)} className="p-2 rounded-xl bg-sand text-ink-70">
           <ChevronLeft size={20} />
         </button>
         <div>
-          <h1 className="text-lg font-bold text-slate-800">Host Dashboard</h1>
-          <p className="text-xs text-slate-500">{game.sport} · {game.format} · {format(new Date(game.game_date), 'MMM d, h:mm a')}</p>
+          <h1 className="text-lg font-bold text-ink">Host Dashboard</h1>
+          <p className="text-xs text-ink-55">{game.sport} · {game.format} · {format(new Date(game.game_date), 'MMM d, h:mm a')}</p>
         </div>
       </div>
 

@@ -34,7 +34,10 @@ app.use('/api', (req, res, next) => {
   next();
 });
 
-app.use('/api/auth', authLimiter, authRoutes);
+// Strict limiter only on credential endpoints, not on /me or /logout
+app.post('/api/auth/login', authLimiter);
+app.post('/api/auth/signup', authLimiter);
+app.use('/api/auth', generalLimiter, authRoutes);
 app.use('/api/games', generalLimiter, gameRoutes);
 app.use('/api/players', generalLimiter, playerRoutes);
 app.use('/api/admin', generalLimiter, adminRoutes);

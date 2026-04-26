@@ -1,7 +1,6 @@
 export default function Chats() {
   return (
-    <div className="flex flex-col items-center justify-center h-full text-center px-6 pt-16">
-      <div style={{ fontSize: 48, marginBottom: 16 }}>💬</div>
+    <div className="flex flex-col items-center justify-center h-full text-center px-6">
       <h2 style={{ fontSize: 22, fontWeight: 600, letterSpacing: -0.6, color: '#1f1a14', marginBottom: 8 }}>
         Chats coming soon
       </h2>

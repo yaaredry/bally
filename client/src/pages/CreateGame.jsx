@@ -134,11 +134,11 @@ export default function CreateGame() {
   return (
     <div className="h-full overflow-y-auto">
       {/* Sub-header */}
-      <div className="flex items-center gap-3 p-4 border-b border-slate-100 sticky top-0 bg-white z-10">
-        <button onClick={() => navigate(-1)} className="p-1.5 rounded-xl bg-slate-100 text-slate-600">
+      <div className="flex items-center gap-3 p-4 sticky top-0 z-10" style={{ background: '#fbf7ef', borderBottom: '0.5px solid rgba(31,26,20,0.08)' }}>
+        <button onClick={() => navigate(-1)} className="p-2 rounded-xl bg-sand text-ink-70">
           <ChevronLeft size={20} />
         </button>
-        <h1 className="text-lg font-bold text-slate-800">Create Game</h1>
+        <h1 className="text-lg font-bold text-ink">Create Game</h1>
       </div>
 
       <form onSubmit={handleSubmit} className="p-4 space-y-5 pb-8">
@@ -150,7 +150,7 @@ export default function CreateGame() {
           <div className="flex gap-2">
             {SPORTS.map(s => (
               <button key={s} type="button" onClick={() => handleSportChange(s)}
-                className={`flex-1 py-3 rounded-xl border-2 text-sm font-medium transition-all ${
+                className={`flex-1 py-3 rounded-xl border-2 text-sm font-medium transition-all min-h-[44px] ${
                   form.sport === s ? 'border-coral bg-coral-soft text-coral-deep' : 'border-slate-200 text-slate-600'
                 }`}>
                 <SportIcon sport={s} size={18} className="mr-1" /> {s === 'Beach Volleyball' ? 'Volleyball' : s}

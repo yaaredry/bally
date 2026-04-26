@@ -14,7 +14,7 @@ export default function Layout() {
     >
       <main
         className={`flex-1 ${isFullScreen ? 'overflow-hidden' : 'overflow-y-auto'}`}
-        style={{ paddingBottom: isFullScreen ? 0 : '5rem' }}
+        style={{ paddingBottom: isFullScreen ? 0 : 'calc(4.5rem + env(safe-area-inset-bottom))' }}
       >
         <Outlet />
       </main>

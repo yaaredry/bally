@@ -165,7 +165,7 @@ export default function Signup() {
             </div>
 
             <div style={{ fontSize: 12, color: 'rgba(31,26,20,0.55)', fontWeight: 500, marginBottom: 8 }}>SPORT</div>
-            <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
               {SPORTS.map(sport => {
                 const active = form.sports.includes(sport);
                 return (
