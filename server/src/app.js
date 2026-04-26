@@ -9,6 +9,7 @@ const gameRoutes = require('./routes/games');
 const playerRoutes = require('./routes/players');
 const adminRoutes = require('./routes/admin');
 const setupChat = require('./socket/chat');
+const { authLimiter, generalLimiter, writeLimiter } = require('./middleware/rateLimiter');
 
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 
@@ -25,10 +26,19 @@ app.use(cookieParser());
 
 app.set('io', io);
 
-app.use('/api/auth', authRoutes);
-app.use('/api/games', gameRoutes);
-app.use('/api/players', playerRoutes);
-app.use('/api/admin', adminRoutes);
+// Apply write limiter to all mutating requests across every route
+app.use('/api', (req, res, next) => {
+  if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
+    return writeLimiter(req, res, next);
+  }
+  next();
+});
+
+app.use('/api/auth', authLimiter, authRoutes);
+app.use('/api/games', generalLimiter, gameRoutes);
+app.use('/api/players', generalLimiter, playerRoutes);
+app.use('/api/admin', generalLimiter, adminRoutes);
+app.use('/api/locations', generalLimiter);
 
 setupChat(io);
 
