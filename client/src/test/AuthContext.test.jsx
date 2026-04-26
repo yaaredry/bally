@@ -98,6 +98,39 @@ describe('AuthContext', () => {
     });
   });
 
+  test('signup sets user state', async () => {
+    server.use(
+      http.get(/\/api\/auth\/me/, () =>
+        HttpResponse.json({ error: 'Not authenticated' }, { status: 401 })
+      )
+    );
+
+    function SignupButton() {
+      const { user, signup } = useAuth();
+      return (
+        <>
+          <div data-testid="user">{user?.display_name || 'none'}</div>
+          <button onClick={() => signup({ email: 'new@test.com', password: 'pw', display_name: 'New User' })}>
+            Signup
+          </button>
+        </>
+      );
+    }
+
+    renderWithAuth(<SignupButton />);
+    await waitFor(() => {
+      expect(screen.getByTestId('user').textContent).toBe('none');
+    });
+
+    await act(async () => {
+      screen.getByRole('button').click();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('user').textContent).toBe('New User');
+    });
+  });
+
   test('updateUser merges partial updates', async () => {
     function UpdateButton() {
       const { user, updateUser } = useAuth();
