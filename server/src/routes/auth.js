@@ -98,7 +98,7 @@ router.post('/logout', (req, res) => {
 router.get('/me', authenticate, async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT id, email, display_name, sports, skill_level, home_beach, avatar_seed, games_hosted, games_played, created_at FROM users WHERE id = $1',
+      'SELECT id, email, display_name, sports, skill_level, home_beach, avatar_seed, games_hosted, games_played, is_admin, created_at FROM users WHERE id = $1',
       [req.user.id]
     );
     if (result.rows.length === 0) {

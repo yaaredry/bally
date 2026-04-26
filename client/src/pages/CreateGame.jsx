@@ -202,7 +202,8 @@ export default function CreateGame() {
               value={form.game_date}
               min={minDate}
               onChange={e => set('game_date', e.target.value)}
-              className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-coral"
+              className="w-full max-w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-coral"
+              style={{ boxSizing: 'border-box' }}
             />
           </div>
           <div>
