@@ -28,29 +28,28 @@ export default function Login() {
   };
 
   return (
-    <div className="relative min-h-full overflow-hidden" style={{ background: '#fbf7ef' }}>
+    <div style={{ minHeight: '100%', background: '#fbf7ef', overflowX: 'hidden' }}>
       {/* Gradient hero */}
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 520, background: G_DUSK }}>
+      <div style={{ position: 'relative', height: 380, background: G_DUSK, flexShrink: 0 }}>
         {/* Sun glow disc */}
         <div style={{
-          position: 'absolute', top: 110, left: '50%', transform: 'translateX(-50%)',
+          position: 'absolute', top: 72, left: '50%', transform: 'translateX(-50%)',
           width: 96, height: 96, borderRadius: 48,
           background: 'radial-gradient(circle at 35% 30%, #fff5d8, #f5d99b 60%, #f5b765)',
           boxShadow: '0 0 100px rgba(255,220,150,0.55)',
         }} />
-      </div>
-
-      {/* Wordmark */}
-      <div style={{ position: 'absolute', top: 260, left: 0, right: 0, textAlign: 'center', color: '#fff' }}>
-        <div style={{ fontSize: 56, lineHeight: 1, letterSpacing: -2.5, fontWeight: 700 }}>Bally</div>
-        <div style={{ fontSize: 13, opacity: 0.85, marginTop: 6, fontWeight: 500, letterSpacing: -0.1 }}>
-          Beach volley · Footvolley
+        {/* Wordmark */}
+        <div style={{ position: 'absolute', bottom: 52, left: 0, right: 0, textAlign: 'center', color: '#fff' }}>
+          <div style={{ fontSize: 56, lineHeight: 1, letterSpacing: -2.5, fontWeight: 700 }}>Bally</div>
+          <div style={{ fontSize: 13, opacity: 0.85, marginTop: 6, fontWeight: 500, letterSpacing: -0.1 }}>
+            Beach volley · Footvolley
+          </div>
         </div>
       </div>
 
-      {/* Glass card */}
+      {/* Glass card — in normal flow, overlaps hero with negative margin */}
       <div style={{
-        position: 'absolute', top: 460, left: 16, right: 16,
+        margin: '-28px 16px 32px',
         background: 'linear-gradient(180deg, #ffffff 0%, #fbf6eb 100%)',
         borderRadius: 28, padding: '26px 22px',
         boxShadow: '0 20px 60px rgba(31,26,20,0.16), 0 4px 12px rgba(31,26,20,0.06)',
