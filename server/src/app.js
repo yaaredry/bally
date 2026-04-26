@@ -2,6 +2,7 @@ const express = require('express');
 const http = require('http');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
+const helmet = require('helmet');
 const { Server } = require('socket.io');
 
 const authRoutes = require('./routes/auth');
@@ -20,8 +21,15 @@ const io = new Server(server, {
   cors: { origin: CLIENT_URL, credentials: true },
 });
 
+// Trust the first proxy (nginx in prod) so rate-limiter sees real client IPs
+app.set('trust proxy', 1);
+
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  contentSecurityPolicy: false, // served via nginx which sets its own; API-only server
+}));
 app.use(cors({ origin: CLIENT_URL, credentials: true }));
-app.use(express.json());
+app.use(express.json({ limit: '64kb' })); // cap request body size
 app.use(cookieParser());
 
 app.set('io', io);

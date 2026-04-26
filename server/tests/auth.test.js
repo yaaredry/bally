@@ -65,6 +65,23 @@ describe('POST /api/auth/signup', () => {
     expect(res.status).toBe(201);
     expect(res.body.user.avatar_seed).toBe('beach-ace');
   });
+
+  test('returns 400 when display_name exceeds 50 characters', async () => {
+    const res = await request(app)
+      .post('/api/auth/signup')
+      .send({ email: 'toolong@test.com', password: 'password123', display_name: 'A'.repeat(51) });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/50 characters/i);
+  });
+
+  test('returns 400 when email exceeds 254 characters', async () => {
+    const longEmail = 'a'.repeat(244) + '@test.com'; // 253+1 = 254... let's make it 255
+    const res = await request(app)
+      .post('/api/auth/signup')
+      .send({ email: 'a'.repeat(246) + '@test.com', password: 'password123', display_name: 'Long Email' });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/too long/i);
+  });
 });
 
 describe('POST /api/auth/login', () => {

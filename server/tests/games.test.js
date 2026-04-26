@@ -254,6 +254,17 @@ describe('POST /api/games', () => {
     const res = await request(app).post('/api/games').send(validGame);
     expect(res.status).toBe(401);
   });
+
+  test('returns 400 when notes exceed 500 characters', async () => {
+    const user = await createUser();
+    const cookie = await loginAs(user);
+    const res = await request(app)
+      .post('/api/games')
+      .set('Cookie', cookie)
+      .send({ ...validGame, notes: 'A'.repeat(501) });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/500 characters/i);
+  });
 });
 
 // ── DELETE /api/games/:id ─────────────────────────────────────────────────────
@@ -753,6 +764,17 @@ describe('POST /api/games/:id/rate and GET /api/games/:id/my-ratings', () => {
       .set('Cookie', cookie)
       .send({ rated_id: host.id, stars: 6 });
     expect(res.status).toBe(400);
+  });
+
+  test('returns 400 if stars is a float', async () => {
+    const { host, player, game } = await completedGame();
+    const cookie = await loginAs(player);
+    const res = await request(app)
+      .post(`/api/games/${game.id}/rate`)
+      .set('Cookie', cookie)
+      .send({ rated_id: host.id, stars: 4.5 });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/integer/i);
   });
 
   test('can update a rating within 7 days', async () => {

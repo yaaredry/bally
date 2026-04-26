@@ -77,6 +77,28 @@ describe('PUT /api/players/me', () => {
     expect(res.status).toBe(401);
   });
 
+  test('returns 400 when display_name exceeds 50 characters', async () => {
+    const user = await createUser();
+    const cookie = await loginAs(user);
+    const res = await request(app)
+      .put('/api/players/me')
+      .set('Cookie', cookie)
+      .send({ display_name: 'A'.repeat(51) });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/50 characters/i);
+  });
+
+  test('returns 400 when home_beach exceeds 100 characters', async () => {
+    const user = await createUser();
+    const cookie = await loginAs(user);
+    const res = await request(app)
+      .put('/api/players/me')
+      .set('Cookie', cookie)
+      .send({ home_beach: 'B'.repeat(101) });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/100 characters/i);
+  });
+
   test('partial update does not overwrite other fields with null', async () => {
     const user = await createUser({ display_name: 'Keep Name', home_beach: 'Gordon Beach' });
     const cookie = await loginAs(user);

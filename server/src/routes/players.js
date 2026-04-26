@@ -19,6 +19,13 @@ router.get('/me', authenticate, async (req, res) => {
 router.put('/me', authenticate, async (req, res) => {
   const { display_name, home_beach, sports, skill_level, avatar_seed } = req.body;
 
+  if (display_name !== undefined && display_name !== null && display_name.length > 50) {
+    return res.status(400).json({ error: 'Display name must be 50 characters or fewer' });
+  }
+  if (home_beach !== undefined && home_beach !== null && home_beach.length > 100) {
+    return res.status(400).json({ error: 'Home beach must be 100 characters or fewer' });
+  }
+
   try {
     const result = await pool.query(
       `UPDATE users SET

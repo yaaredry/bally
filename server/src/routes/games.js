@@ -146,6 +146,9 @@ router.post('/', authenticate, async (req, res) => {
   if (!sport || !format || !skill_level || !game_date || !location_name || !lat || !lng || !max_players) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
+  if (notes && notes.length > 500) {
+    return res.status(400).json({ error: 'Notes must be 500 characters or fewer' });
+  }
 
   try {
     const result = await pool.query(
@@ -406,8 +409,8 @@ router.get('/:id/my-ratings', authenticate, async (req, res) => {
 // POST /api/games/:id/rate
 router.post('/:id/rate', authenticate, async (req, res) => {
   const { rated_id, stars } = req.body;
-  if (!rated_id || !stars || stars < 1 || stars > 5) {
-    return res.status(400).json({ error: 'rated_id and stars (1-5) are required' });
+  if (!rated_id || !stars || !Number.isInteger(stars) || stars < 1 || stars > 5) {
+    return res.status(400).json({ error: 'rated_id and stars (1-5 integer) are required' });
   }
   if (rated_id === req.user.id) {
     return res.status(400).json({ error: 'Cannot rate yourself' });
