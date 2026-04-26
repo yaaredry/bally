@@ -22,7 +22,8 @@ jobs:
           script: |
             set -e
             cd /opt/bally
-            git pull origin main
+            git fetch origin main
+            git reset --hard origin/main
             sudo docker compose -f docker-compose.prod.yml --env-file .env.prod up --build -d
             sudo docker image prune -f
             echo "Deploy complete: $(git log --oneline -1)"
