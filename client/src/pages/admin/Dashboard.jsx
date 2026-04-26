@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../../api/client';
+import SportIcon from '../../components/SportIcon';
 
 function StatCard({ label, value, sub, color = 'text-brand-600' }) {
   return (
@@ -93,7 +94,7 @@ export default function Dashboard() {
             <div key={row.sport} className="text-center">
               <div className="text-2xl font-bold text-brand-600">{row.count}</div>
               <div className="text-sm text-slate-600 mt-0.5">
-                {row.sport === 'Beach Volleyball' ? '🏐 Volleyball' : '⚽ Footvolley'}
+                <SportIcon sport={row.sport} size={16} className="mr-1" />{row.sport === 'Beach Volleyball' ? 'Volleyball' : row.sport}
               </div>
             </div>
           ))}

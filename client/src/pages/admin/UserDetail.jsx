@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Check, X } from 'lucide-react';
 import api from '../../api/client';
+import SportIcon from '../../components/SportIcon';
 import { SKILL_LEVELS_BY_SPORT } from '../../lib/skillLevels';
 import { format } from 'date-fns';
 
@@ -141,7 +142,7 @@ export default function UserDetail() {
                 {SPORTS.map(s => (
                   <button key={s} type="button" onClick={() => toggleSport(s)}
                     className={`flex-1 py-2 rounded-xl border-2 text-xs font-medium transition-all ${form.sports.includes(s) ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-slate-200 text-slate-600'}`}>
-                    {s === 'Beach Volleyball' ? '🏐 Volleyball' : '⚽ Footvolley'}
+                    <SportIcon sport={s} size={16} className="mr-1" />{s === 'Beach Volleyball' ? 'Volleyball' : s}
                   </button>
                 ))}
               </div>

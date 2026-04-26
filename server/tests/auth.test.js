@@ -191,3 +191,42 @@ describe('GET /health', () => {
     expect(res.body.status).toBe('ok');
   });
 });
+
+describe('GET /api/auth/me — edge cases', () => {
+  test('returns 404 when authenticated user no longer exists in DB', async () => {
+    const user = await createUser();
+    const cookie = await loginAs(user);
+    await pool.query('DELETE FROM users WHERE id = $1', [user.id]);
+    const res = await request(app).get('/api/auth/me').set('Cookie', cookie);
+    expect(res.status).toBe(404);
+    expect(res.body.error).toMatch(/not found/i);
+  });
+});
+
+describe('Auth DB error paths', () => {
+  afterEach(() => { jest.restoreAllMocks(); });
+
+  test('returns 500 when DB fails on POST /auth/signup', async () => {
+    jest.spyOn(pool, 'query').mockRejectedValueOnce(new Error('DB error'));
+    const res = await request(app)
+      .post('/api/auth/signup')
+      .send({ email: 'err@test.com', password: 'password123', display_name: 'ErrUser' });
+    expect(res.status).toBe(500);
+  });
+
+  test('returns 500 when DB fails on POST /auth/login', async () => {
+    jest.spyOn(pool, 'query').mockRejectedValueOnce(new Error('DB error'));
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ email: 'err@test.com', password: 'password123' });
+    expect(res.status).toBe(500);
+  });
+
+  test('returns 500 when DB fails on GET /auth/me', async () => {
+    const user = await createUser();
+    const cookie = await loginAs(user);
+    jest.spyOn(pool, 'query').mockRejectedValueOnce(new Error('DB error'));
+    const res = await request(app).get('/api/auth/me').set('Cookie', cookie);
+    expect(res.status).toBe(500);
+  });
+});

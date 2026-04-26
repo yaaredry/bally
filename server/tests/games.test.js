@@ -89,6 +89,19 @@ describe('GET /api/games', () => {
     expect(Array.isArray(res.body.games)).toBe(true);
   });
 
+  test('filters by skill_level', async () => {
+    const host = await createUser();
+    await makeGame(host.id, { skill_level: '5' });
+    await makeGame(host.id, { skill_level: '3' });
+    const viewer = await createUser();
+    const cookie = await loginAs(viewer);
+    const res = await request(app)
+      .get('/api/games?skill_level=5')
+      .set('Cookie', cookie);
+    expect(res.status).toBe(200);
+    res.body.games.forEach(g => expect(g.skill_level).toBe('5'));
+  });
+
   test('returns 401 when not authenticated', async () => {
     const res = await request(app).get('/api/games');
     expect(res.status).toBe(401);
@@ -385,6 +398,15 @@ describe('GET /api/games/:id/requests', () => {
       .set('Cookie', cookie);
     expect(res.status).toBe(403);
   });
+
+  test('returns 404 for non-existent game', async () => {
+    const user = await createUser();
+    const cookie = await loginAs(user);
+    const res = await request(app)
+      .get('/api/games/00000000-0000-0000-0000-000000000000/requests')
+      .set('Cookie', cookie);
+    expect(res.status).toBe(404);
+  });
 });
 
 // ── PUT /api/games/:id/requests/:requestId ────────────────────────────────────
@@ -479,6 +501,27 @@ describe('PUT /api/games/:id/requests/:requestId', () => {
 
     const r = await pool.query('SELECT status FROM games WHERE id = $1', [game.id]);
     expect(r.rows[0].status).toBe('full');
+  });
+
+  test('returns 404 when game does not exist', async () => {
+    const user = await createUser();
+    const cookie = await loginAs(user);
+    const res = await request(app)
+      .put('/api/games/00000000-0000-0000-0000-000000000000/requests/00000000-0000-0000-0000-000000000000')
+      .set('Cookie', cookie)
+      .send({ status: 'approved' });
+    expect(res.status).toBe(404);
+  });
+
+  test('returns 404 when request does not exist', async () => {
+    const host = await createUser();
+    const game = await makeGame(host.id);
+    const cookie = await loginAs(host);
+    const res = await request(app)
+      .put(`/api/games/${game.id}/requests/00000000-0000-0000-0000-000000000000`)
+      .set('Cookie', cookie)
+      .send({ status: 'approved' });
+    expect(res.status).toBe(404);
   });
 
   test('returns 400 when trying to approve into a full game', async () => {
@@ -875,6 +918,57 @@ describe('GET /health', () => {
   });
 });
 
+// ── Business logic edge cases ─────────────────────────────────────────────────
+
+describe('Games business logic edge cases', () => {
+  test('returns 400 when joining a full game', async () => {
+    const host = await createUser();
+    const player = await createUser();
+    const game = await makeGame(host.id, { status: 'full' });
+    const cookie = await loginAs(player);
+    const res = await request(app)
+      .post(`/api/games/${game.id}/join`)
+      .set('Cookie', cookie);
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/accepting/i);
+  });
+
+  test('returns 400 when rating window has closed (>7 days)', async () => {
+    const host = await createUser();
+    const player = await createUser();
+    const game = await makeGame(host.id, {
+      game_date: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(),
+      status: 'completed',
+    });
+    await approvePlayer(game.id, player.id);
+    const cookie = await loginAs(player);
+    const res = await request(app)
+      .post(`/api/games/${game.id}/rate`)
+      .set('Cookie', cookie)
+      .send({ rated_id: host.id, stars: 4 });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/window.*closed|closed.*window/i);
+  });
+
+  test('returns 400 when rated player was not in the game', async () => {
+    const host = await createUser();
+    const player = await createUser();
+    const outsider = await createUser();
+    const game = await makeGame(host.id, {
+      game_date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+      status: 'completed',
+    });
+    await approvePlayer(game.id, player.id);
+    const cookie = await loginAs(player);
+    const res = await request(app)
+      .post(`/api/games/${game.id}/rate`)
+      .set('Cookie', cookie)
+      .send({ rated_id: outsider.id, stars: 4 });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/not part of this game/i);
+  });
+});
+
 // ── Error paths (invalid UUID triggers 500) ───────────────────────────────────
 
 describe('Games error paths (invalid UUID → 500)', () => {
@@ -935,5 +1029,101 @@ describe('Games error paths (invalid UUID → 500)', () => {
     expect(res.status).toBe(200);
     expect(res.body.hosting).toEqual([]);
     expect(res.body.joined).toEqual([]);
+  });
+
+  test('GET /api/games/:id/requests with invalid UUID returns 500', async () => {
+    const host = await createUser();
+    const cookie = await loginAs(host);
+    const res = await request(app)
+      .get(`/api/games/${INVALID}/requests`)
+      .set('Cookie', cookie);
+    expect(res.status).toBe(500);
+  });
+
+  test('PUT /api/games/:id/requests/:requestId with invalid UUID returns 500', async () => {
+    const host = await createUser();
+    const cookie = await loginAs(host);
+    const res = await request(app)
+      .put(`/api/games/${INVALID}/requests/${INVALID}`)
+      .set('Cookie', cookie)
+      .send({ status: 'approved' });
+    expect(res.status).toBe(500);
+  });
+
+  test('POST /api/games/:id/gear with invalid UUID returns 500', async () => {
+    const user = await createUser();
+    const cookie = await loginAs(user);
+    const res = await request(app)
+      .post(`/api/games/${INVALID}/gear`)
+      .set('Cookie', cookie)
+      .send({ item: 'ball' });
+    expect(res.status).toBe(500);
+  });
+
+  test('DELETE /api/games/:id/gear/:item with invalid UUID returns 500', async () => {
+    const user = await createUser();
+    const cookie = await loginAs(user);
+    const res = await request(app)
+      .delete(`/api/games/${INVALID}/gear/ball`)
+      .set('Cookie', cookie);
+    expect(res.status).toBe(500);
+  });
+
+  test('GET /api/games/:id/my-ratings with invalid UUID returns 500', async () => {
+    const user = await createUser();
+    const cookie = await loginAs(user);
+    const res = await request(app)
+      .get(`/api/games/${INVALID}/my-ratings`)
+      .set('Cookie', cookie);
+    expect(res.status).toBe(500);
+  });
+
+  test('POST /api/games/:id/rate with invalid UUID returns 500', async () => {
+    const user = await createUser();
+    const other = await createUser();
+    const cookie = await loginAs(user);
+    const res = await request(app)
+      .post(`/api/games/${INVALID}/rate`)
+      .set('Cookie', cookie)
+      .send({ rated_id: other.id, stars: 4 });
+    expect(res.status).toBe(500);
+  });
+});
+
+// ── DB error catch paths (pool mock) ─────────────────────────────────────────
+
+describe('Games DB error catch paths', () => {
+  afterEach(() => { jest.restoreAllMocks(); });
+
+  test('returns 500 when DB fails on GET /api/games/my/games', async () => {
+    const user = await createUser();
+    const cookie = await loginAs(user);
+    jest.spyOn(pool, 'query').mockRejectedValueOnce(new Error('DB error'));
+    const res = await request(app).get('/api/games/my/games').set('Cookie', cookie);
+    expect(res.status).toBe(500);
+  });
+
+  test('returns 500 when DB fails on GET /api/games', async () => {
+    const user = await createUser();
+    const cookie = await loginAs(user);
+    jest.spyOn(pool, 'query').mockRejectedValueOnce(new Error('DB error'));
+    const res = await request(app).get('/api/games').set('Cookie', cookie);
+    expect(res.status).toBe(500);
+  });
+
+  test('returns 500 when DB fails on POST /api/games', async () => {
+    const user = await createUser();
+    const cookie = await loginAs(user);
+    jest.spyOn(pool, 'query').mockRejectedValueOnce(new Error('DB error'));
+    const res = await request(app)
+      .post('/api/games')
+      .set('Cookie', cookie)
+      .send({
+        sport: 'Beach Volleyball', format: '2v2', skill_level: '3',
+        game_date: new Date(Date.now() + 86400000).toISOString(),
+        duration_hours: 1.5, location_name: 'Gordon Beach',
+        lat: 32.0861, lng: 34.7669, max_players: 4,
+      });
+    expect(res.status).toBe(500);
   });
 });

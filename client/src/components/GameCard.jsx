@@ -3,8 +3,7 @@ import { format } from 'date-fns';
 import { MapPin, Clock, Users } from 'lucide-react';
 import SkillBadge from './SkillBadge';
 import AvatarDisplay from './AvatarDisplay';
-
-const SPORT_ICON = { 'Beach Volleyball': '🏐', 'Footvolley': '⚽' };
+import SportIcon from './SportIcon';
 
 export default function GameCard({ game }) {
   const navigate = useNavigate();
@@ -18,7 +17,7 @@ export default function GameCard({ game }) {
       className="w-full bg-white rounded-2xl shadow-sm border border-slate-100 p-4 text-left hover:shadow-md transition-shadow active:scale-[0.99]"
     >
       <div className="flex items-start gap-3">
-        <div className="text-2xl leading-none mt-0.5">{SPORT_ICON[game.sport] || '🏐'}</div>
+        <div className="leading-none mt-0.5"><SportIcon sport={game.sport} size={28} /></div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-semibold text-slate-800">{game.format}</span>

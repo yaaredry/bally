@@ -39,4 +39,17 @@ describe('SkillBadge', () => {
       unmount();
     });
   });
+
+  test('renders in small mode (covers small-prop ternary branches)', () => {
+    render(<SkillBadge level="5" small />);
+    expect(screen.getByText('5')).toBeInTheDocument();
+  });
+
+  test('all BV levels render in small mode', () => {
+    ['1','2','3','4','5','6','7'].forEach(level => {
+      const { unmount } = render(<SkillBadge level={level} small />);
+      expect(screen.getByText(level)).toBeInTheDocument();
+      unmount();
+    });
+  });
 });

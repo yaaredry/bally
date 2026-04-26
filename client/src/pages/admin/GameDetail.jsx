@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, UserMinus, Trash2, Ban } from 'lucide-react';
 import { format } from 'date-fns';
 import api from '../../api/client';
+import SportIcon from '../../components/SportIcon';
 
 export default function AdminGameDetail() {
   const { id } = useParams();
@@ -57,7 +58,7 @@ export default function AdminGameDetail() {
         </button>
         <div>
           <h1 className="text-xl font-bold text-slate-800">
-            {game.sport === 'Beach Volleyball' ? '🏐' : '⚽'} {game.format} · {game.skill_level}
+            <SportIcon sport={game.sport} size={18} className="mr-1" />{game.format} · {game.skill_level}
           </h1>
           <p className="text-sm text-slate-500">{game.location_name} · {format(new Date(game.game_date), 'EEE MMM d, HH:mm')}</p>
         </div>

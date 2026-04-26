@@ -1,5 +1,6 @@
 const request = require('supertest');
 const { app } = require('../src/app');
+const pool = require('../src/config/db');
 const { createUser, loginAs } = require('./helpers');
 
 describe('GET /api/players/me', () => {
@@ -140,6 +141,17 @@ describe('GET /api/players/:id', () => {
     const user = await createUser();
     const res = await request(app).get(`/api/players/${user.id}`);
     expect(res.status).toBe(401);
+  });
+});
+
+describe('GET /api/players/me — edge cases', () => {
+  test('returns 404 when authenticated user no longer exists in DB', async () => {
+    const user = await createUser();
+    const cookie = await loginAs(user);
+    await pool.query('DELETE FROM users WHERE id = $1', [user.id]);
+    const res = await request(app).get('/api/players/me').set('Cookie', cookie);
+    expect(res.status).toBe(404);
+    expect(res.body.error).toMatch(/not found/i);
   });
 });
 
