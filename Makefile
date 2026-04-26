@@ -71,8 +71,11 @@ prod-logs: ## Tail all prod logs
 prod-ps: ## Show prod container status
 	$(DC_PROD) ps
 
-prod-seed: ## Seed the prod database (use with caution)
+prod-seed: ## Seed the prod database (use with caution — wipes all data)
 	$(DC_PROD) exec server node db/seed.js
+
+prod-seed-locations: ## Insert curated beaches into prod DB (safe — idempotent, no data loss)
+	$(DC_PROD) exec server node db/seed-locations.js
 
 prod-db: ## Open a psql shell in the prod database
 	$(DC_PROD) exec db psql -U $${POSTGRES_USER:-bally} -d $${POSTGRES_DB:-bally}
