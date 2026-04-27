@@ -204,16 +204,24 @@ describe('GET /api/admin/games/:id', () => {
 // ── /api/admin/locations ──────────────────────────────────────────────────────
 
 describe('Admin locations CRUD', () => {
-  test('GET /api/admin/locations returns locations', async () => {
+  test('GET /api/admin/locations returns locations with nets array', async () => {
     const admin = await createUser({ is_admin: true });
+    const r = await pool.query(
+      "INSERT INTO locations (name, city, lat, lng) VALUES ('Admin Test Beach', 'Tel Aviv', 32.0, 34.7) RETURNING id"
+    );
     await pool.query(
-      "INSERT INTO locations (name, city, lat, lng) VALUES ('Admin Test Beach', 'Tel Aviv', 32.0, 34.7)"
+      "INSERT INTO location_nets (location_id, lat, lng, net_type) VALUES ($1, 32.0, 34.7, 'volleyball')",
+      [r.rows[0].id]
     );
     const res = await request(app)
       .get('/api/admin/locations')
       .set('Cookie', adminCookie(admin));
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body.locations)).toBe(true);
+    const beach = res.body.locations.find(l => l.name === 'Admin Test Beach');
+    expect(beach).toBeDefined();
+    expect(Array.isArray(beach.nets)).toBe(true);
+    expect(beach.nets).toHaveLength(1);
   });
 
   test('POST /api/admin/locations creates a location', async () => {
@@ -221,9 +229,10 @@ describe('Admin locations CRUD', () => {
     const res = await request(app)
       .post('/api/admin/locations')
       .set('Cookie', adminCookie(admin))
-      .send({ name: 'New Admin Beach', city: 'Tel Aviv', lat: 32.1, lng: 34.8 });
+      .send({ name: 'New Admin Beach', city: 'Tel Aviv' });
     expect(res.status).toBe(201);
     expect(res.body.location).toMatchObject({ name: 'New Admin Beach' });
+    expect(Array.isArray(res.body.location.nets)).toBe(true);
   });
 
   test('PUT /api/admin/locations/:id updates a location name', async () => {
@@ -240,12 +249,12 @@ describe('Admin locations CRUD', () => {
     expect(res.body.location.name).toBe('Updated Beach Name');
   });
 
-  test('POST /api/admin/locations returns 400 when fields are missing', async () => {
+  test('POST /api/admin/locations returns 400 when city is missing', async () => {
     const admin = await createUser({ is_admin: true });
     const res = await request(app)
       .post('/api/admin/locations')
       .set('Cookie', adminCookie(admin))
-      .send({ name: 'Missing Fields Beach' }); // missing city, lat, lng
+      .send({ name: 'Missing City Beach' });
     expect(res.status).toBe(400);
   });
 
@@ -260,6 +269,122 @@ describe('Admin locations CRUD', () => {
       .set('Cookie', adminCookie(admin));
     expect(res.status).toBe(200);
     expect(res.body.location.is_active).toBe(false);
+  });
+});
+
+// ── /api/admin/locations/:id/nets ─────────────────────────────────────────────
+
+describe('Admin location nets CRUD', () => {
+  async function makeBeach(name = 'Net Test Beach') {
+    const r = await pool.query(
+      "INSERT INTO locations (name, city, lat, lng) VALUES ($1, 'Tel Aviv', 32.0, 34.7) RETURNING id",
+      [name]
+    );
+    return r.rows[0].id;
+  }
+
+  test('POST adds a volleyball net to a beach', async () => {
+    const admin = await createUser({ is_admin: true });
+    const locId = await makeBeach();
+    const res = await request(app)
+      .post(`/api/admin/locations/${locId}/nets`)
+      .set('Cookie', adminCookie(admin))
+      .send({ lat: 32.0833, lng: 34.7679, net_type: 'volleyball' });
+    expect(res.status).toBe(201);
+    expect(res.body.net).toMatchObject({ net_type: 'volleyball', location_id: locId });
+  });
+
+  test('POST adds a teqball table to a beach', async () => {
+    const admin = await createUser({ is_admin: true });
+    const locId = await makeBeach('Teqball Beach');
+    const res = await request(app)
+      .post(`/api/admin/locations/${locId}/nets`)
+      .set('Cookie', adminCookie(admin))
+      .send({ lat: 32.0836, lng: 34.7683, net_type: 'teqball' });
+    expect(res.status).toBe(201);
+    expect(res.body.net.net_type).toBe('teqball');
+  });
+
+  test('POST returns 400 when lat/lng missing', async () => {
+    const admin = await createUser({ is_admin: true });
+    const locId = await makeBeach('Missing Coords Beach');
+    const res = await request(app)
+      .post(`/api/admin/locations/${locId}/nets`)
+      .set('Cookie', adminCookie(admin))
+      .send({ net_type: 'volleyball' });
+    expect(res.status).toBe(400);
+  });
+
+  test('POST returns 400 for invalid net_type', async () => {
+    const admin = await createUser({ is_admin: true });
+    const locId = await makeBeach('Bad Type Beach');
+    const res = await request(app)
+      .post(`/api/admin/locations/${locId}/nets`)
+      .set('Cookie', adminCookie(admin))
+      .send({ lat: 32.0, lng: 34.7, net_type: 'tennis' });
+    expect(res.status).toBe(400);
+  });
+
+  test('POST returns 404 for non-existent location', async () => {
+    const admin = await createUser({ is_admin: true });
+    const res = await request(app)
+      .post('/api/admin/locations/00000000-0000-0000-0000-000000000000/nets')
+      .set('Cookie', adminCookie(admin))
+      .send({ lat: 32.0, lng: 34.7, net_type: 'volleyball' });
+    expect(res.status).toBe(404);
+  });
+
+  test('PUT updates net coordinates and type', async () => {
+    const admin = await createUser({ is_admin: true });
+    const locId = await makeBeach('Update Net Beach');
+    const netRes = await pool.query(
+      "INSERT INTO location_nets (location_id, lat, lng, net_type) VALUES ($1, 32.0, 34.7, 'volleyball') RETURNING id",
+      [locId]
+    );
+    const netId = netRes.rows[0].id;
+    const res = await request(app)
+      .put(`/api/admin/locations/${locId}/nets/${netId}`)
+      .set('Cookie', adminCookie(admin))
+      .send({ lat: 32.0840, lng: 34.7684, net_type: 'teqball' });
+    expect(res.status).toBe(200);
+    expect(res.body.net.net_type).toBe('teqball');
+    expect(parseFloat(res.body.net.lat)).toBeCloseTo(32.0840, 3);
+  });
+
+  test('PUT returns 404 for non-existent net', async () => {
+    const admin = await createUser({ is_admin: true });
+    const locId = await makeBeach('No Net Beach');
+    const res = await request(app)
+      .put(`/api/admin/locations/${locId}/nets/00000000-0000-0000-0000-000000000000`)
+      .set('Cookie', adminCookie(admin))
+      .send({ lat: 32.0 });
+    expect(res.status).toBe(404);
+  });
+
+  test('DELETE removes a net', async () => {
+    const admin = await createUser({ is_admin: true });
+    const locId = await makeBeach('Delete Net Beach');
+    const netRes = await pool.query(
+      "INSERT INTO location_nets (location_id, lat, lng, net_type) VALUES ($1, 32.0, 34.7, 'volleyball') RETURNING id",
+      [locId]
+    );
+    const netId = netRes.rows[0].id;
+    const res = await request(app)
+      .delete(`/api/admin/locations/${locId}/nets/${netId}`)
+      .set('Cookie', adminCookie(admin));
+    expect(res.status).toBe(200);
+    expect(res.body.ok).toBe(true);
+    const check = await pool.query('SELECT id FROM location_nets WHERE id = $1', [netId]);
+    expect(check.rows).toHaveLength(0);
+  });
+
+  test('DELETE returns 404 for non-existent net', async () => {
+    const admin = await createUser({ is_admin: true });
+    const locId = await makeBeach('No Delete Beach');
+    const res = await request(app)
+      .delete(`/api/admin/locations/${locId}/nets/00000000-0000-0000-0000-000000000000`)
+      .set('Cookie', adminCookie(admin));
+    expect(res.status).toBe(404);
   });
 });
 
