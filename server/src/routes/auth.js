@@ -17,14 +17,18 @@ router.post('/signup', async (req, res) => {
   if (!email || !password || !display_name) {
     return res.status(400).json({ error: 'Email, password, and display name are required' });
   }
-  if (password.length < 6) {
-    return res.status(400).json({ error: 'Password must be at least 6 characters' });
-  }
-  if (display_name.length > 50) {
-    return res.status(400).json({ error: 'Display name must be 50 characters or fewer' });
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!EMAIL_RE.test(email)) {
+    return res.status(400).json({ error: 'Invalid email address' });
   }
   if (email.length > 254) {
     return res.status(400).json({ error: 'Email address is too long' });
+  }
+  if (password.length < 8) {
+    return res.status(400).json({ error: 'Password must be at least 8 characters' });
+  }
+  if (display_name.length > 50) {
+    return res.status(400).json({ error: 'Display name must be 50 characters or fewer' });
   }
 
   try {

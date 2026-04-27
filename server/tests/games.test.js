@@ -278,6 +278,62 @@ describe('POST /api/games', () => {
     expect(res.status).toBe(400);
     expect(res.body.error).toMatch(/500 characters/i);
   });
+
+  test('returns 400 when max_players is below 2', async () => {
+    const user = await createUser();
+    const cookie = await loginAs(user);
+    const res = await request(app)
+      .post('/api/games')
+      .set('Cookie', cookie)
+      .send({ ...validGame, max_players: 1 });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/max_players/i);
+  });
+
+  test('returns 400 when max_players exceeds 20', async () => {
+    const user = await createUser();
+    const cookie = await loginAs(user);
+    const res = await request(app)
+      .post('/api/games')
+      .set('Cookie', cookie)
+      .send({ ...validGame, max_players: 21 });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/max_players/i);
+  });
+
+  test('returns 400 when max_players is not a number', async () => {
+    const user = await createUser();
+    const cookie = await loginAs(user);
+    const res = await request(app)
+      .post('/api/games')
+      .set('Cookie', cookie)
+      .send({ ...validGame, max_players: 'lots' });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/max_players/i);
+  });
+
+  test('returns 400 when coordinates are out of range', async () => {
+    const user = await createUser();
+    const cookie = await loginAs(user);
+    const res = await request(app)
+      .post('/api/games')
+      .set('Cookie', cookie)
+      .send({ ...validGame, lat: 999, lng: 999 });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/coordinates/i);
+  });
+
+  test('returns 400 when game_date is in the past', async () => {
+    const user = await createUser();
+    const cookie = await loginAs(user);
+    const pastDate = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const res = await request(app)
+      .post('/api/games')
+      .set('Cookie', cookie)
+      .send({ ...validGame, game_date: pastDate });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/future/i);
+  });
 });
 
 // ── DELETE /api/games/:id ─────────────────────────────────────────────────────

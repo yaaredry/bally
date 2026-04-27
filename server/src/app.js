@@ -21,8 +21,12 @@ const io = new Server(server, {
   cors: { origin: CLIENT_URL, credentials: true },
 });
 
-// Trust the first proxy (nginx in prod) so rate-limiter sees real client IPs
-app.set('trust proxy', 1);
+// Trust the first proxy (nginx in prod) so rate-limiter sees real client IPs.
+// Only enabled in production — in dev there is no proxy and trusting X-Forwarded-For
+// would allow rate-limit bypass via IP spoofing.
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
 
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
