@@ -60,9 +60,23 @@ setupChat(io);
 const pool = require('./config/db');
 app.get('/api/locations', async (req, res) => {
   try {
-    const result = await pool.query(
-      'SELECT id, name, city, lat, lng FROM locations WHERE is_active = TRUE ORDER BY city, lat DESC'
-    );
+    // Use first active net's coordinates as the representative map pin.
+    // Fall back to locations.lat/lng if no nets exist yet.
+    const result = await pool.query(`
+      SELECT
+        l.id, l.name, l.city,
+        COALESCE(n.lat, l.lat) AS lat,
+        COALESCE(n.lng, l.lng) AS lng
+      FROM locations l
+      LEFT JOIN LATERAL (
+        SELECT lat, lng FROM location_nets
+        WHERE location_id = l.id AND is_active = TRUE
+        ORDER BY sort_order, created_at
+        LIMIT 1
+      ) n ON TRUE
+      WHERE l.is_active = TRUE
+      ORDER BY l.city, l.lat DESC
+    `);
     res.json({ locations: result.rows });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
