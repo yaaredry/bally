@@ -1,10 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import Map, { Marker } from 'react-map-gl/maplibre';
 import { ChevronLeft } from 'lucide-react';
 import api from '../api/client';
 import { SKILL_LEVELS_BY_SPORT } from '../lib/skillLevels';
 import SportIcon from '../components/SportIcon';
+
+const MAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
 
 const SPORTS = ['Beach Volleyball', 'Footvolley', 'Teqball'];
 const FORMATS = ['1v1', '2v2', '3v3', '4v4', 'Custom'];
@@ -16,17 +18,6 @@ const FORMATS_BY_SPORT = {
 const DURATIONS = [1, 1.5, 2, 2.5, 3];
 const MAX_PLAYERS_DEFAULT = { '1v1': 2, '2v2': 4, '3v3': 6, '4v4': 8, 'Custom': 8 };
 const CUSTOM = '__custom__';
-
-function MapPinPicker({ onSelect }) {
-  const [marker, setMarker] = useState(null);
-  useMapEvents({
-    click(e) {
-      setMarker([e.latlng.lat, e.latlng.lng]);
-      onSelect(e.latlng.lat, e.latlng.lng);
-    },
-  });
-  return marker ? <Marker position={marker} /> : null;
-}
 
 export default function CreateGame() {
   const navigate = useNavigate();
@@ -48,7 +39,7 @@ export default function CreateGame() {
   const [customLocationName, setCustomLocationName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [mapCenter] = useState([32.0853, 34.7818]);
+  const mapCenter = { longitude: 34.7818, latitude: 32.0853 };
 
   useEffect(() => {
     api.get('/locations').then(res => setAllLocations(res.data.locations)).catch(() => {});
@@ -273,11 +264,30 @@ export default function CreateGame() {
                 className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-coral"
               />
               <p className="text-xs text-slate-500">Tap the map to drop a pin on your location</p>
-              <div className="h-48 rounded-2xl overflow-hidden border border-slate-200">
-                <MapContainer center={mapCenter} zoom={12} style={{ height: '100%', width: '100%' }} zoomControl={false}>
-                  <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                  <MapPinPicker onSelect={(lat, lng) => { set('lat', lat); set('lng', lng); }} />
-                </MapContainer>
+              <div className="h-48 rounded-2xl overflow-hidden border border-slate-200" style={{ cursor: 'crosshair' }}>
+                <Map
+                  initialViewState={{ ...mapCenter, zoom: 12 }}
+                  mapStyle={MAP_STYLE}
+                  style={{ height: '100%', width: '100%' }}
+                  onClick={e => {
+                    const { lng, lat } = e.lngLat;
+                    set('lat', lat);
+                    set('lng', lng);
+                  }}
+                >
+                  {form.lat && form.lng && (
+                    <Marker longitude={form.lng} latitude={form.lat} anchor="bottom">
+                      <div style={{
+                        width: 32, height: 32,
+                        background: '#e87a4a',
+                        borderRadius: '50% 50% 50% 0',
+                        transform: 'rotate(-45deg)',
+                        border: '2px solid white',
+                        boxShadow: '0 3px 10px rgba(0,0,0,0.25)',
+                      }} />
+                    </Marker>
+                  )}
+                </Map>
               </div>
               {form.lat && <p className="text-xs text-green-600">✓ Pin set</p>}
             </div>

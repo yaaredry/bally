@@ -1,44 +1,47 @@
-import { useState, useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import L from 'leaflet';
+import { useState, useEffect, useCallback } from 'react';
+import Map, { Marker, Popup } from 'react-map-gl/maplibre';
 import { useNavigate } from 'react-router-dom';
 import { List, Map as MapIcon, SlidersHorizontal, X } from 'lucide-react';
 import { format } from 'date-fns';
 import api from '../api/client';
 import GameCard from '../components/GameCard';
 import SportIcon from '../components/SportIcon';
+import SkillBadge from '../components/SkillBadge';
 import { SKILL_HEX, SKILL_LEVELS_BY_SPORT } from '../lib/skillLevels';
 
-const SPORT_PIN_IMG = {
-  'Beach Volleyball': '/icons/volleyball-ball.jpg',
-  'Footvolley':       '/icons/footvolley-ball.png',
-  'Teqball':          '/icons/teqball-table.png',
-};
-
-const createGameIcon = (game) => {
-  const src = SPORT_PIN_IMG[game.sport] || SPORT_PIN_IMG['Beach Volleyball'];
-  const iconContent = `<img src="${src}" style="width:20px;height:20px;object-fit:contain;transform:rotate(45deg);" alt="${game.sport}" />`;
-  return L.divIcon({
-  className: '',
-  html: `<div style="background:${SKILL_HEX[game.skill_level] || '#0ea5e9'};width:40px;height:40px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.25);border:2px solid white;">
-    ${iconContent}
-  </div>`,
-  iconSize: [40, 40],
-  iconAnchor: [20, 40],
-  popupAnchor: [0, -44],
-});
-};
-
-function LocationSetter({ position }) {
-  const map = useMap();
-  useEffect(() => {
-    if (position) map.setView(position, 13);
-  }, [position, map]);
-  return null;
-}
+const MAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
+const TEL_AVIV = { longitude: 34.7818, latitude: 32.0853, zoom: 13 };
 
 const FORMATS = ['1v1', '2v2', '3v3', '4v4'];
 const SPORTS_LIST = ['Beach Volleyball', 'Footvolley', 'Teqball'];
+
+function GamePin({ game, onClick, selected }) {
+  const bg = SKILL_HEX[game.skill_level] || '#0ea5e9';
+  return (
+    <div
+      onClick={onClick}
+      style={{
+        width: 42,
+        height: 42,
+        background: bg,
+        borderRadius: '50% 50% 50% 0',
+        transform: 'rotate(-45deg)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        boxShadow: selected
+          ? `0 0 0 3px white, 0 0 0 5px ${bg}, 0 6px 20px rgba(0,0,0,0.3)`
+          : '0 3px 10px rgba(0,0,0,0.22), 0 0 0 2px white',
+        cursor: 'pointer',
+        transition: 'box-shadow 0.15s ease',
+      }}
+    >
+      <div style={{ transform: 'rotate(45deg)', display: 'flex' }}>
+        <SportIcon sport={game.sport} size={20} />
+      </div>
+    </div>
+  );
+}
 
 export default function MapHome() {
   const navigate = useNavigate();
@@ -48,25 +51,32 @@ export default function MapHome() {
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({ sport: '', skill_level: '', format: '' });
   const [loading, setLoading] = useState(true);
+  const [selectedGame, setSelectedGame] = useState(null);
+  const [viewState, setViewState] = useState(TEL_AVIV);
 
   useEffect(() => {
     navigator.geolocation?.getCurrentPosition(
-      pos => setUserPos([pos.coords.latitude, pos.coords.longitude]),
-      () => setUserPos([32.0853, 34.7818]) // Default: Tel Aviv Gordon Beach
+      pos => setUserPos({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
+      () => {}
     );
   }, []);
 
   useEffect(() => {
-    const params = new URLSearchParams();
-    if (filters.sport) params.set('sport', filters.sport);
-    if (filters.skill_level) params.set('skill_level', filters.skill_level);
-    if (filters.format) params.set('format', filters.format);
     if (userPos) {
-      params.set('lat', userPos[0]);
-      params.set('lng', userPos[1]);
+      setViewState(v => ({ ...v, latitude: userPos.latitude, longitude: userPos.longitude }));
+    }
+  }, [userPos]);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (filters.sport)       params.set('sport', filters.sport);
+    if (filters.skill_level) params.set('skill_level', filters.skill_level);
+    if (filters.format)      params.set('format', filters.format);
+    if (userPos) {
+      params.set('lat', userPos.latitude);
+      params.set('lng', userPos.longitude);
       params.set('radius_km', '100');
     }
-
     api.get(`/games?${params}`)
       .then(res => setGames(res.data.games))
       .catch(console.error)
@@ -75,21 +85,18 @@ export default function MapHome() {
 
   const activeFiltersCount = Object.values(filters).filter(Boolean).length;
   const clearFilter = (key) => setFilters(prev => ({ ...prev, [key]: '' }));
-
-  const defaultCenter = userPos || [32.0853, 34.7818];
+  const handleMapClick = useCallback(() => setSelectedGame(null), []);
 
   return (
     <div className="relative h-full flex flex-col">
-      {/* Top bar */}
+      {/* Top bar — floats above the map */}
       <div className="absolute top-0 left-0 right-0 z-10 px-3 pt-2 space-y-2 pointer-events-none">
         <div className="flex gap-2 pointer-events-auto">
           {/* Filter button */}
           <button
             onClick={() => setShowFilters(!showFilters)}
             className={`flex items-center gap-1.5 px-3 py-2 rounded-xl shadow text-sm font-medium transition-colors ${
-              activeFiltersCount > 0
-                ? 'bg-coral text-white'
-                : 'bg-white text-ink-70'
+              activeFiltersCount > 0 ? 'bg-coral text-white' : 'bg-white text-ink-70'
             }`}
           >
             <SlidersHorizontal size={15} />
@@ -136,9 +143,12 @@ export default function MapHome() {
               <p className="text-xs font-semibold text-slate-500 mb-1.5">Sport</p>
               <div className="flex gap-2">
                 {SPORTS_LIST.map(s => (
-                  <button key={s} onClick={() => setFilters(prev => ({ ...prev, sport: prev.sport === s ? '' : s }))}
+                  <button key={s} onClick={() => setFilters(prev => ({ ...prev, sport: prev.sport === s ? '' : s, skill_level: '' }))}
                     className={`flex-1 py-1.5 rounded-lg text-xs font-medium border transition-all ${filters.sport === s ? 'border-coral bg-coral-soft text-coral-deep' : 'border-slate-200 text-slate-600'}`}>
-                    <span className="inline-flex items-center gap-1"><SportIcon sport={s} size={14} />{s === 'Beach Volleyball' ? 'Volleyball' : s}</span>
+                    <span className="inline-flex items-center gap-1">
+                      <SportIcon sport={s} size={14} />
+                      {s === 'Beach Volleyball' ? 'Volleyball' : s}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -147,7 +157,7 @@ export default function MapHome() {
               <p className="text-xs font-semibold text-slate-500 mb-1.5">Skill</p>
               {filters.sport ? (
                 <div className="flex gap-1.5 flex-wrap">
-                  {[...( SKILL_LEVELS_BY_SPORT[filters.sport] || []), 'All welcome'].map(s => (
+                  {[...(SKILL_LEVELS_BY_SPORT[filters.sport] || []), 'All welcome'].map(s => (
                     <button key={s} onClick={() => setFilters(prev => ({ ...prev, skill_level: prev.skill_level === s ? '' : s }))}
                       className={`py-1 px-2.5 rounded-lg text-xs font-medium border transition-all ${filters.skill_level === s ? 'border-coral bg-coral-soft text-coral-deep' : 'border-slate-200 text-slate-600'}`}>
                       {s}
@@ -176,39 +186,83 @@ export default function MapHome() {
       {/* Map view */}
       {view === 'map' && (
         <div className="flex-1 relative">
-          <MapContainer
-            center={defaultCenter}
-            zoom={13}
+          <Map
+            {...viewState}
+            onMove={e => setViewState(e.viewState)}
+            mapStyle={MAP_STYLE}
             style={{ height: '100%', width: '100%' }}
-            zoomControl={false}
+            onClick={handleMapClick}
           >
-            <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            />
-            {userPos && <LocationSetter position={userPos} />}
+            {/* User position dot */}
+            {userPos && (
+              <Marker longitude={userPos.longitude} latitude={userPos.latitude} anchor="center">
+                <div style={{
+                  width: 14, height: 14,
+                  background: '#3b82f6',
+                  borderRadius: '50%',
+                  border: '2.5px solid white',
+                  boxShadow: '0 0 0 3px rgba(59,130,246,0.25)',
+                }} />
+              </Marker>
+            )}
+
+            {/* Game pins */}
             {games.map(game => (
-              <Marker key={game.id} position={[parseFloat(game.lat), parseFloat(game.lng)]} icon={createGameIcon(game)}>
-                <Popup>
-                  <div className="min-w-[160px] text-sm">
-                    <div className="font-semibold">{game.sport} · {game.format}</div>
-                    <div className="text-slate-500 text-xs mt-0.5">{game.location_name}</div>
-                    <div className="text-slate-500 text-xs">{format(new Date(game.game_date), 'EEE MMM d, h:mm a')}</div>
-                    <div className="text-slate-500 text-xs">{game.slots_remaining ?? game.max_players} slots left</div>
-                    <button
-                      onClick={() => navigate(`/games/${game.id}`)}
-                      style={{ marginTop: 8, width: '100%', background: 'linear-gradient(180deg,#ee8856 0%,#d85e3a 100%)', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 0', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
-                    >
-                      View game
-                    </button>
-                  </div>
-                </Popup>
+              <Marker
+                key={game.id}
+                longitude={parseFloat(game.lng)}
+                latitude={parseFloat(game.lat)}
+                anchor="bottom"
+                onClick={e => { e.originalEvent.stopPropagation(); setSelectedGame(game); }}
+              >
+                <GamePin game={game} selected={selectedGame?.id === game.id} />
               </Marker>
             ))}
-          </MapContainer>
 
-          {/* Game count badge — sits above the BottomNav */}
-          <div className="absolute left-1/2 -translate-x-1/2 bg-white rounded-full px-4 py-2 shadow text-sm font-medium text-ink-70 z-10" style={{ bottom: 'calc(env(safe-area-inset-bottom) + 88px)' }}>
+            {/* Selected game popup */}
+            {selectedGame && (
+              <Popup
+                longitude={parseFloat(selectedGame.lng)}
+                latitude={parseFloat(selectedGame.lat)}
+                anchor="bottom"
+                offset={52}
+                closeButton={false}
+                onClose={() => setSelectedGame(null)}
+              >
+                <div className="p-3 w-52">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <SportIcon sport={selectedGame.sport} size={16} />
+                    <span className="font-semibold text-slate-800 text-sm leading-tight">
+                      {selectedGame.sport} · {selectedGame.format}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <SkillBadge level={selectedGame.skill_level} small />
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">{selectedGame.location_name}</p>
+                  <p className="text-xs text-slate-500">
+                    {format(new Date(selectedGame.game_date), 'EEE MMM d · h:mm a')}
+                  </p>
+                  <p className="text-xs text-slate-400 mb-2">
+                    {selectedGame.slots_remaining ?? selectedGame.max_players} slot{selectedGame.slots_remaining !== 1 ? 's' : ''} left
+                  </p>
+                  <button
+                    onClick={() => navigate(`/games/${selectedGame.id}`)}
+                    className="w-full py-2 rounded-xl text-white text-xs font-bold"
+                    style={{ background: 'linear-gradient(180deg,#ee8856 0%,#d85e3a 100%)' }}
+                  >
+                    View game
+                  </button>
+                </div>
+              </Popup>
+            )}
+          </Map>
+
+          {/* Game count badge */}
+          <div
+            className="absolute left-1/2 -translate-x-1/2 bg-white rounded-full px-4 py-2 shadow text-sm font-medium text-ink-70 z-10"
+            style={{ bottom: 'calc(env(safe-area-inset-bottom) + 88px)' }}
+          >
             {loading ? 'Loading…' : `${games.length} game${games.length !== 1 ? 's' : ''} nearby`}
           </div>
         </div>
