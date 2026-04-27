@@ -197,8 +197,8 @@ router.put('/users/:id', async (req, res) => {
 
 router.put('/users/:id/password', async (req, res) => {
   const { password } = req.body;
-  if (!password || password.length < 6) {
-    return res.status(400).json({ error: 'Password must be at least 6 characters' });
+  if (!password || password.length < 8) {
+    return res.status(400).json({ error: 'Password must be at least 8 characters' });
   }
   try {
     const hash = await bcrypt.hash(password, 12);

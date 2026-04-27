@@ -146,6 +146,23 @@ router.post('/', authenticate, async (req, res) => {
   if (!sport || !format || !skill_level || !game_date || !location_name || !lat || !lng || !max_players) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
+
+  const parsedMaxPlayers = parseInt(max_players, 10);
+  if (!Number.isFinite(parsedMaxPlayers) || parsedMaxPlayers < 2 || parsedMaxPlayers > 20) {
+    return res.status(400).json({ error: 'max_players must be between 2 and 20' });
+  }
+
+  const parsedLat = parseFloat(lat);
+  const parsedLng = parseFloat(lng);
+  if (!Number.isFinite(parsedLat) || parsedLat < -90 || parsedLat > 90 ||
+      !Number.isFinite(parsedLng) || parsedLng < -180 || parsedLng > 180) {
+    return res.status(400).json({ error: 'Invalid coordinates' });
+  }
+
+  if (new Date(game_date) <= new Date()) {
+    return res.status(400).json({ error: 'Game date must be in the future' });
+  }
+
   if (notes && notes.length > 500) {
     return res.status(400).json({ error: 'Notes must be 500 characters or fewer' });
   }
@@ -155,7 +172,7 @@ router.post('/', authenticate, async (req, res) => {
       `INSERT INTO games (host_id, sport, format, skill_level, game_date, duration_hours, location_name, location, max_players, notes)
        VALUES ($1, $2, $3, $4, $5, $6, $7, ST_SetSRID(ST_MakePoint($8, $9), 4326), $10, $11)
        RETURNING *, ST_Y(location::geometry) as lat, ST_X(location::geometry) as lng`,
-      [req.user.id, sport, format, skill_level, game_date, duration_hours, location_name, parseFloat(lng), parseFloat(lat), parseInt(max_players), notes || null]
+      [req.user.id, sport, format, skill_level, game_date, duration_hours, location_name, parsedLng, parsedLat, parsedMaxPlayers, notes || null]
     );
 
     await pool.query('UPDATE users SET games_hosted = games_hosted + 1 WHERE id = $1', [req.user.id]);

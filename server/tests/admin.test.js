@@ -359,14 +359,15 @@ describe('PUT /api/admin/users/:id/password', () => {
     expect(loginRes.status).toBe(200);
   });
 
-  test('returns 400 if password is too short', async () => {
+  test('returns 400 if password is too short (fewer than 8 chars)', async () => {
     const admin = await createUser({ is_admin: true });
     const user = await createUser();
     const res = await request(app)
       .put(`/api/admin/users/${user.id}/password`)
       .set('Cookie', adminCookie(admin))
-      .send({ password: '12345' });
+      .send({ password: '1234567' });
     expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/8 characters/i);
   });
 });
 

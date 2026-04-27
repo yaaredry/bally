@@ -53,9 +53,25 @@ describe('POST /api/auth/signup', () => {
   test('returns 400 when password is too short', async () => {
     const res = await request(app)
       .post('/api/auth/signup')
-      .send({ email: 'short@test.com', password: '12345', display_name: 'Short' });
+      .send({ email: 'short@test.com', password: '1234567', display_name: 'Short' });
     expect(res.status).toBe(400);
-    expect(res.body.error).toMatch(/6 characters/i);
+    expect(res.body.error).toMatch(/8 characters/i);
+  });
+
+  test('returns 400 for invalid email format', async () => {
+    const res = await request(app)
+      .post('/api/auth/signup')
+      .send({ email: 'notanemail', password: 'password123', display_name: 'Test' });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/invalid email/i);
+  });
+
+  test('returns 400 for email without domain', async () => {
+    const res = await request(app)
+      .post('/api/auth/signup')
+      .send({ email: 'user@', password: 'password123', display_name: 'Test' });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/invalid email/i);
   });
 
   test('accepts signup without optional fields', async () => {
@@ -193,13 +209,13 @@ describe('GET /health', () => {
 });
 
 describe('GET /api/auth/me — edge cases', () => {
-  test('returns 404 when authenticated user no longer exists in DB', async () => {
+  test('returns 403 when authenticated user no longer exists in DB', async () => {
     const user = await createUser();
     const cookie = await loginAs(user);
     await pool.query('DELETE FROM users WHERE id = $1', [user.id]);
     const res = await request(app).get('/api/auth/me').set('Cookie', cookie);
-    expect(res.status).toBe(404);
-    expect(res.body.error).toMatch(/not found/i);
+    // Middleware catches missing user and treats it as suspended/inactive
+    expect(res.status).toBe(403);
   });
 });
 
@@ -225,6 +241,7 @@ describe('Auth DB error paths', () => {
   test('returns 500 when DB fails on GET /auth/me', async () => {
     const user = await createUser();
     const cookie = await loginAs(user);
+    // The authenticate middleware now queries the DB; the mock is consumed there
     jest.spyOn(pool, 'query').mockRejectedValueOnce(new Error('DB error'));
     const res = await request(app).get('/api/auth/me').set('Cookie', cookie);
     expect(res.status).toBe(500);
