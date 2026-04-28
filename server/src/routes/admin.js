@@ -354,27 +354,43 @@ router.delete('/games/:id/chat', async (req, res) => {
 
 // ── Locations ────────────────────────────────────────────────────────────────
 
+// GET /admin/locations — all beaches with their nets
 router.get('/locations', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM locations ORDER BY city, lat DESC');
-    res.json({ locations: result.rows });
+    const locsResult = await pool.query(
+      'SELECT * FROM locations ORDER BY city, name'
+    );
+    const netsResult = await pool.query(
+      'SELECT * FROM location_nets ORDER BY location_id, sort_order, created_at'
+    );
+    const netsByLocation = {};
+    for (const net of netsResult.rows) {
+      if (!netsByLocation[net.location_id]) netsByLocation[net.location_id] = [];
+      netsByLocation[net.location_id].push(net);
+    }
+    const locations = locsResult.rows.map(loc => ({
+      ...loc,
+      nets: netsByLocation[loc.id] || [],
+    }));
+    res.json({ locations });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
   }
 });
 
+// POST /admin/locations — create a new beach (no nets required at creation)
 router.post('/locations', async (req, res) => {
-  const { name, city, lat, lng } = req.body;
-  if (!name || !city || lat == null || lng == null) {
-    return res.status(400).json({ error: 'name, city, lat, and lng are required' });
+  const { name, city } = req.body;
+  if (!name || !city) {
+    return res.status(400).json({ error: 'name and city are required' });
   }
   try {
     const result = await pool.query(
-      'INSERT INTO locations (name, city, lat, lng) VALUES ($1,$2,$3,$4) RETURNING *',
-      [name, city, lat, lng]
+      'INSERT INTO locations (name, city, lat, lng) VALUES ($1,$2,0,0) RETURNING *',
+      [name, city]
     );
-    res.status(201).json({ location: result.rows[0] });
+    res.status(201).json({ location: { ...result.rows[0], nets: [] } });
   } catch (err) {
     if (err.code === '23505') return res.status(400).json({ error: 'Location name already exists' });
     console.error(err);
@@ -382,17 +398,16 @@ router.post('/locations', async (req, res) => {
   }
 });
 
+// PUT /admin/locations/:id — rename beach or change city
 router.put('/locations/:id', async (req, res) => {
-  const { name, city, lat, lng } = req.body;
+  const { name, city } = req.body;
   try {
     const result = await pool.query(
       `UPDATE locations SET
          name = COALESCE($1, name),
-         city = COALESCE($2, city),
-         lat  = COALESCE($3, lat),
-         lng  = COALESCE($4, lng)
-       WHERE id = $5 RETURNING *`,
-      [name, city, lat, lng, req.params.id]
+         city = COALESCE($2, city)
+       WHERE id = $3 RETURNING *`,
+      [name || null, city || null, req.params.id]
     );
     if (!result.rows.length) return res.status(404).json({ error: 'Location not found' });
     res.json({ location: result.rows[0] });
@@ -402,6 +417,7 @@ router.put('/locations/:id', async (req, res) => {
   }
 });
 
+// PATCH /admin/locations/:id/toggle — activate / deactivate beach
 router.patch('/locations/:id/toggle', async (req, res) => {
   try {
     const result = await pool.query(
@@ -410,6 +426,92 @@ router.patch('/locations/:id/toggle', async (req, res) => {
     );
     if (!result.rows.length) return res.status(404).json({ error: 'Location not found' });
     res.json({ location: result.rows[0] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ── Location Nets ─────────────────────────────────────────────────────────────
+
+// POST /admin/locations/:id/nets — add a net to a beach
+router.post('/locations/:id/nets', async (req, res) => {
+  const { lat, lng, net_type, label } = req.body;
+  if (lat == null || lng == null || !net_type) {
+    return res.status(400).json({ error: 'lat, lng, and net_type are required' });
+  }
+  if (!['volleyball', 'teqball'].includes(net_type)) {
+    return res.status(400).json({ error: 'net_type must be volleyball or teqball' });
+  }
+  try {
+    // Verify location exists
+    const loc = await pool.query('SELECT id FROM locations WHERE id = $1', [req.params.id]);
+    if (!loc.rows.length) return res.status(404).json({ error: 'Location not found' });
+
+    // Assign sort_order = current max + 1
+    const maxOrd = await pool.query(
+      'SELECT COALESCE(MAX(sort_order), -1) AS m FROM location_nets WHERE location_id = $1',
+      [req.params.id]
+    );
+    const sortOrder = maxOrd.rows[0].m + 1;
+
+    const result = await pool.query(
+      `INSERT INTO location_nets (location_id, lat, lng, net_type, label, sort_order)
+       VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
+      [req.params.id, lat, lng, net_type, label || null, sortOrder]
+    );
+
+    // Keep locations.lat/lng in sync with first net
+    await pool.query(
+      `UPDATE locations SET lat = $1, lng = $2
+       WHERE id = $3
+         AND NOT EXISTS (
+           SELECT 1 FROM location_nets
+           WHERE location_id = $3 AND sort_order < $4
+         )`,
+      [lat, lng, req.params.id, sortOrder]
+    );
+
+    res.status(201).json({ net: result.rows[0] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// PUT /admin/locations/:id/nets/:netId — update a net
+router.put('/locations/:id/nets/:netId', async (req, res) => {
+  const { lat, lng, net_type, label } = req.body;
+  if (net_type && !['volleyball', 'teqball'].includes(net_type)) {
+    return res.status(400).json({ error: 'net_type must be volleyball or teqball' });
+  }
+  try {
+    const result = await pool.query(
+      `UPDATE location_nets SET
+         lat      = COALESCE($1, lat),
+         lng      = COALESCE($2, lng),
+         net_type = COALESCE($3, net_type),
+         label    = COALESCE($4, label)
+       WHERE id = $5 AND location_id = $6 RETURNING *`,
+      [lat ?? null, lng ?? null, net_type || null, label ?? null, req.params.netId, req.params.id]
+    );
+    if (!result.rows.length) return res.status(404).json({ error: 'Net not found' });
+    res.json({ net: result.rows[0] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// DELETE /admin/locations/:id/nets/:netId — remove a net
+router.delete('/locations/:id/nets/:netId', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'DELETE FROM location_nets WHERE id = $1 AND location_id = $2 RETURNING id',
+      [req.params.netId, req.params.id]
+    );
+    if (!result.rows.length) return res.status(404).json({ error: 'Net not found' });
+    res.json({ ok: true });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });

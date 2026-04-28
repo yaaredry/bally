@@ -7,6 +7,7 @@ beforeEach(async () => {
   await pool.query('DELETE FROM chat_messages');
   await pool.query('DELETE FROM game_requests');
   await pool.query('DELETE FROM games');
+  await pool.query('DELETE FROM location_nets');
   await pool.query('DELETE FROM locations');
   await pool.query('DELETE FROM users');
 });

@@ -7,6 +7,12 @@ export default defineConfig({
     environment: 'happy-dom',
     globals: true,
     setupFiles: ['./src/test/setup.js'],
+    // MapLibre GL requires WebGL which is not available in happy-dom.
+    // Mock the library so components that import it can still be unit-tested.
+    alias: {
+      'react-map-gl/maplibre': new URL('./src/test/__mocks__/react-map-gl.jsx', import.meta.url).pathname,
+      'maplibre-gl/dist/maplibre-gl.css': new URL('./src/test/__mocks__/empty.js', import.meta.url).pathname,
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],

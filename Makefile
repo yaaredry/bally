@@ -2,8 +2,8 @@ DC_DEV  = docker compose -f docker-compose.dev.yml
 DC_PROD = docker compose -f docker-compose.prod.yml --env-file .env.prod
 DC_TEST = docker compose -f docker-compose.test.yml
 
-.PHONY: dev dev-build dev-down dev-logs dev-ps dev-seed \
-        prod prod-build prod-down prod-logs prod-ps prod-seed \
+.PHONY: dev dev-build dev-down dev-logs dev-ps dev-seed dev-seed-locations \
+        prod prod-build prod-down prod-logs prod-ps prod-seed prod-seed-locations \
         test test-db test-db-down \
         clean
 
@@ -36,6 +36,9 @@ dev-ps: ## Show dev container status
 
 dev-seed: ## Seed the dev database with test data
 	$(DC_DEV) exec server node db/seed.js
+
+dev-seed-locations: ## Seed curated Tel Aviv beaches + nets (replaces existing Tel Aviv rows)
+	$(DC_DEV) exec server node db/seed-locations.js
 
 dev-db: ## Open a psql shell in the dev database
 	$(DC_DEV) exec db psql -U bally -d bally

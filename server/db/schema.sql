@@ -77,6 +77,22 @@ CREATE TABLE IF NOT EXISTS locations (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Individual net / table coordinates per beach
+CREATE TABLE IF NOT EXISTS location_nets (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  location_id UUID NOT NULL REFERENCES locations(id) ON DELETE CASCADE,
+  lat         DECIMAL(10,7) NOT NULL,
+  lng         DECIMAL(10,7) NOT NULL,
+  net_type    VARCHAR(20) NOT NULL DEFAULT 'volleyball'
+                CHECK (net_type IN ('volleyball', 'teqball')),
+  label       VARCHAR(100),
+  sort_order  SMALLINT DEFAULT 0,
+  is_active   BOOLEAN DEFAULT TRUE,
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_location_nets_location ON location_nets(location_id);
+
 -- Player ratings (after game completion, 7-day window)
 CREATE TABLE IF NOT EXISTS ratings (
   id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),

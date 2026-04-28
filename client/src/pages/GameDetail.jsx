@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+import Map, { Marker } from 'react-map-gl/maplibre';
 import { format } from 'date-fns';
 import { io } from 'socket.io-client';
 import { ChevronLeft, Clock, MapPin, Users, Send, Settings, Lock, Share2, Check, LogOut } from 'lucide-react';
@@ -281,19 +281,32 @@ export default function GameDetail() {
 
         {/* Map thumbnail */}
         {game.lat && game.lng && (
-          <div className="h-36 rounded-2xl overflow-hidden border border-slate-100">
-            <MapContainer
-              center={[parseFloat(game.lat), parseFloat(game.lng)]}
-              zoom={15}
+          <div className="h-40 rounded-2xl overflow-hidden border border-slate-100 pointer-events-none">
+            <Map
+              initialViewState={{
+                longitude: parseFloat(game.lng),
+                latitude: parseFloat(game.lat),
+                zoom: 15,
+              }}
+              mapStyle="https://tiles.openfreemap.org/styles/liberty"
               style={{ height: '100%', width: '100%' }}
-              zoomControl={false}
-              dragging={false}
-              scrollWheelZoom={false}
+              dragPan={false}
+              dragRotate={false}
+              scrollZoom={false}
               doubleClickZoom={false}
+              keyboard={false}
             >
-              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-              <Marker position={[parseFloat(game.lat), parseFloat(game.lng)]} />
-            </MapContainer>
+              <Marker longitude={parseFloat(game.lng)} latitude={parseFloat(game.lat)} anchor="bottom">
+                <div style={{
+                  width: 32, height: 32,
+                  background: '#e87a4a',
+                  borderRadius: '50% 50% 50% 0',
+                  transform: 'rotate(-45deg)',
+                  border: '2px solid white',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+                }} />
+              </Marker>
+            </Map>
           </div>
         )}
 
